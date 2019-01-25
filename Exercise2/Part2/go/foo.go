@@ -16,7 +16,8 @@ const (
 func number_server(add_number <-chan int, control <-chan int, number chan<- int) {
 	var i = 0
 
-	// This for-select pattern is one you will become familiar with if you're using go "correctly".
+	// This for-select pattern is one you will become familiar with if
+    // you're using go "correctly".
 	for {
 		select {
 			// TODO: receive different messages and handle them correctly
@@ -43,7 +44,8 @@ func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	// TODO: Construct the required channels
-	// Think about wether the receptions of the number should be unbuffered, or buffered with a fixed queue size.
+	// Think about wether the receptions of the number should be unbuffered, 
+    // or buffered with a fixed queue size.
 
 	// TODO: Spawn the required goroutines
 
