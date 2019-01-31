@@ -22,4 +22,4 @@
 > 
 
 ### List some advantages of using lock-based synchronization primitives over message passing.
-> *Your answer here*
+> 
