@@ -1,6 +1,6 @@
 // Network module for go
 
-//sende heartbeats
+//DONE sende heartbeats
 //phoenix backup
 // Hele tiden oppdatere de andre heisene på sine egne orders
 // - hele tiden sende ned til orders en komplett ordreliste
@@ -16,6 +16,8 @@ import (
 	"fmt"
 	//"os"
 	"time"	
+	"math/rand"	
+    //"strconv"
 )
 
 type MessageStruct struct {
@@ -23,27 +25,35 @@ type MessageStruct struct {
 }
 
 func main() {
+	fmt.Println("Started")
+
+    // Send Heartbeat
+    rand.Seed(time.Now().UnixNano())
+    ranInt := rand.Intn(20)
 	transmitMessage := make(chan MessageStruct)
-	receiveMessage := make(chan MessageStruct)
-
 	go bcast.Transmitter(16569, transmitMessage)
-	go bcast.Receiver(16569, receiveMessage)
-
 	go func() {
-		helloMsg := MessageStruct{"Hello from me"}
+        response := fmt.Sprintf("Heartbeat from %d", ranInt)
+		helloMsg := MessageStruct{response}
 		for {
-			receiveMessage <- helloMsg
+			transmitMessage <- helloMsg
 			time.Sleep(1 * time.Second)
 		}
 	}()
 
-	fmt.Println("Started")
-	for {
-		select {
-		case a := <-receiveMessage:
-			fmt.Printf("Received: %#v\n", a)
-		}
-	}
+    // Listen to heartbeat
+	receiveMessage := make(chan MessageStruct)
+	go bcast.Receiver(16569, receiveMessage)
+    go func() {
+        for {
+            select {
+            case a := <-receiveMessage:
+                fmt.Printf("Received: %v\n", a)
+            }
+        }
+    }()
+
+    for {}
 }
 
 //func UDP_init()
