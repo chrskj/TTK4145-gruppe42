@@ -1,6 +1,6 @@
 // Network module for go
 
-//DONE sende heartbeats
+//sende heartbeats
 //phoenix backup
 // Hele tiden oppdatere de andre heisene på sine egne orders
 // - hele tiden sende ned til orders en komplett ordreliste
@@ -32,6 +32,7 @@ func main() {
     ranInt := rand.Intn(20)
 	transmitMessage := make(chan MessageStruct)
 	go bcast.Transmitter(16569, transmitMessage)
+
 	go func() {
         response := fmt.Sprintf("Heartbeat from %d", ranInt)
 		helloMsg := MessageStruct{response}
@@ -44,16 +45,13 @@ func main() {
     // Listen to heartbeat
 	receiveMessage := make(chan MessageStruct)
 	go bcast.Receiver(16569, receiveMessage)
-    go func() {
-        for {
-            select {
-            case a := <-receiveMessage:
-                fmt.Printf("Received: %v\n", a)
-            }
-        }
-    }()
 
-    for {}
+	for {
+		select {
+		case a := <-receiveMessage:
+			fmt.Printf("Received: %v\n", a)
+		}
+	}
 }
 
 //func UDP_init()
