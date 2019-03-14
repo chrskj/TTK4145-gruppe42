@@ -51,6 +51,8 @@ func main(ordersToElevAlgo,elevAlgoToOrders, comToElevAlgo,costFuncToCom,newOrde
 	go elevio.PollObstructionSwitch(drv_obstr)
 	go elevio.PollStopButton(drv_stop)
 
+a = 3
+
 	for {
 		select {
 
