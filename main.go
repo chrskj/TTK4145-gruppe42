@@ -1,5 +1,11 @@
-//Starte alle kanaler
-//Starte alle gorutines, og passe kanaler som input arguments
+import "./elevAlgo"
+import "fmt"
+
+type orderStruct struct {
+	int floor
+	int direction //0 er ned og 1 er opp
+} 
+
 
 //Kanal orders -> komm (orders)
 ordersToCom := make(chan struct med noe)
@@ -8,18 +14,20 @@ ordersToCom := make(chan struct med noe)
 comToOrders := make(chan struct med noe)
 
 
-//Kanal orders -> heisalgo (ønsket floor)
-ordersToElevAlgo := make(chan int)
+//Kanal orders -> heisalgo (ønsket floor, direction)
+ordersToElevAlgo := make(chan orderStruct)
 //Kanal heisalgo -> orders (current floor)
 elevAlgoToOrders := make(chan int)
 
 //Kanal komm -> heisalgo (request om cost function)
-comToElevAlgo := make(chan int)
+comToElevAlgo := make(chan orderStruct)
 //Kanal heisalgo -> komm (cost function)
-elevAlgoToCom := make(chan float)
+costFuncToCom := make(chan float)
+//Kanal heisalgo -> komm (ny ordre )
+newOrderToCom := make(chan orderStruct)
 
 go orders(ordersToCom, comToOrders)
-go elevAlgo(ordersToElevAlgo,elevAlgoToOrders)
+go elevAlgo.main(ordersToElevAlgo,elevAlgoToOrders, comToElevAlgo,costFuncToCom,newOrderToCom)
 go com(comToElevAlgo,elevAlgoToCom)
 
 //done

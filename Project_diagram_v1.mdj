@@ -6524,7 +6524,7 @@
 									},
 									"font": "Arial;13;0",
 									"left": 51,
-									"top": 629,
+									"top": 637,
 									"width": 50.130859375,
 									"height": 13,
 									"text": "software"
@@ -6537,14 +6537,14 @@
 									},
 									"font": "Arial;13;1",
 									"left": 45,
-									"top": 629,
+									"top": 637,
 									"width": 1,
 									"height": 13
 								}
 							],
 							"font": "Arial;13;0",
 							"left": 40,
-							"top": 624,
+							"top": 632,
 							"width": 921,
 							"height": 441,
 							"nameLabel": {
