@@ -1,6 +1,20 @@
+package main
+
+import (
+	//"./network/localip"
+	//"./network/peers"
+	//"flag"
+	//"fmt"
+	//"os"
+	//"time"	
+	//"math/rand"	
+    //"strconv"
+    com "code/communication"
+)
+
 //Starte alle kanaler
 //Starte alle gorutines, og passe kanaler som input arguments
-
+/*
 //Kanal orders -> komm (orders)
 ordersToCom := make(chan struct med noe)
 
@@ -21,6 +35,11 @@ elevAlgoToCom := make(chan float)
 go orders(ordersToCom, comToOrders)
 go elevAlgo(ordersToElevAlgo,elevAlgoToOrders)
 go com(comToElevAlgo,elevAlgoToCom)
-
+*/
 //done
 
+func main() {
+ 	fmt.Println("Started")
+    go com.sendHeartbeat()
+    go com.listenHeartbeat()
+}
