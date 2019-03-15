@@ -24,6 +24,8 @@ import (
 var numElevators int = 3
 var thisElevator int
 var costChan chan ChannelPacket
+var data []Order
+var tstamp uint64 = 1
 
 type Order struct {
 	elevator  int
@@ -32,19 +34,28 @@ type Order struct {
 	timestamp uint64
 }
 
-type ChannelPacket struct{
+type ChannelPacket struct {
 	packetType string
-	elevator int
-	toFloor int64
-	direction int64
-	timestamp uint64
-	cost float64
+	elevator   int
+	toFloor    int64
+	direction  int64
+	timestamp  uint64
+	cost       float64
+	datastring string
 }
 
-func init(ordersToCom, comToOrders,ordersToElevAlgo,elevAlgoToOrders) {
-	var data []Order
-	var costChan chan OcomPacket
-	var tstamp uint64 = 1
+func main() {
+	data = readFile()
+	addOrder(Order{
+		elevator:  1,
+		toFloor:   2,
+		direction: 1,
+		timestamp: 66,
+	})
+	writeToFile()
+}
+
+func init(ordersToCom, comToOrders, ordersToElevAlgo, elevAlgoToOrders) {
 	ticker := time.NewTicker(100 * time.Millisecond)
 	go func() {
 		for {
@@ -57,48 +68,48 @@ func init(ordersToCom, comToOrders,ordersToElevAlgo,elevAlgoToOrders) {
 
 	//get elevator ID
 
-	go orderRoutine(data)
+	go orderRoutine(ordersToCom, comToOrders, ordersToElevAlgo, elevAlgoToOrders)
 }
 
-func orderRoutine(data []Order,ordersToCom chan ChannelPacket, comToOrders chan ChannelPacket,ordersToElevAlgo chan ChannelPacket,elevAlgoToOrders chan ChannelPacket){
+func orderRoutine(ordersToCom chan ChannelPacket, comToOrders chan ChannelPacket, ordersToElevAlgo chan ChannelPacket, elevAlgoToOrders chan ChannelPacket) {
 	var costChan chan ChannelPacket
-	for{
-		select{
-		case temp:= <- comToOrders:
-			switch temp.packetType{
+	for {
+		select {
+		case temp := <-comToOrders:
+			switch temp.packetType {
 			case "compareCost":
 				costChan <- temp
 			case "orderComplete":
 				toRemove := Order{
-					elevator:  temp.elevator
-					toFloor:   temp.toFloor
-					direction: temp.direction
-					timestamp: temp.timestamp
+					elevator:  temp.elevator,
+					toFloor:   temp.toFloor,
+					direction: temp.direction,
+					timestamp: temp.timestamp,
 				}
 				removeOrder(toRemove)
 			case "addOrder":
 				newOrder := Order{
-					elevator:  temp.elevator
-					toFloor:   temp.toFloor
-					direction: temp.direction
-					timestamp: temp.timestamp
+					elevator:  temp.elevator,
+					toFloor:   temp.toFloor,
+					direction: temp.direction,
+					timestamp: temp.timestamp,
 				}
 				addOrder(newOrder)
 			case "getOrderList":
-				packet := Order{
-					packetType: "orderList"
-
+				packet := ChannelPacket{
+					packetType: "orderList",
+					datastring: getOrderString(),
 				}
-				ordersToCom <- 
+				ordersToCom <- packet
 			}
-		case temp:= <- elevAlgoToOrders:
-			switch temp.packetType{
+		case temp := <-elevAlgoToOrders:
+			switch temp.packetType {
 			case "buttonPress":
 				newOrder := Order{
-					elevator: -1
-					toFloor: temp.toFloor
-					direction: temp.direction
-					timestamp: tstamp
+					elevator:  -1,
+					toFloor:   temp.toFloor,
+					direction: temp.direction,
+					timestamp: tstamp,
 				}
 				//check if order already exists
 				for index, value := range data {
@@ -108,7 +119,7 @@ func orderRoutine(data []Order,ordersToCom chan ChannelPacket, comToOrders chan 
 					}
 				}
 				//if not: start the cost compare
-				if newOrder.timestamp>0{
+				if newOrder.timestamp > 0 {
 					go costCompare(newOrder, ordersToCom)
 				}
 			}
@@ -116,20 +127,20 @@ func orderRoutine(data []Order,ordersToCom chan ChannelPacket, comToOrders chan 
 	}
 }
 
-func costCompare(newOrder Order,ordersToCom chan ChannelPacket){
+func costCompare(newOrder Order, ordersToCom chan ChannelPacket) {
 	ordersToCom <- ChannelPacket{
-		packetType: "requestCostFunc"
-		elevator: thisElevator
+		packetType: "requestCostFunc",
+		elevator:   thisElevator,
 	}
-	costTicker := time.NewTicker(10*time.Millisecond)
+	costTicker := time.NewTicker(10 * time.Millisecond)
 	var ticks uint = 0
 	var costs []ChannelPacket
-	for recievedOrders :=0; recievedOrders<numElevators && ticks<200;{
-		select{
-		case temp <- costChan:
+	for recievedOrders := 0; recievedOrders < numElevators && ticks < 200; {
+		select {
+		case temp := <-costChan:
 			unique := true
-			for _,val := range costs{
-				if val == temp{
+			for _, val := range costs {
+				if val == temp {
 					unique = false
 				}
 			}
@@ -137,18 +148,19 @@ func costCompare(newOrder Order,ordersToCom chan ChannelPacket){
 				costs = append(costs, temp)
 				recievedOrders++
 			}
-		case <- costTicker.C:
+		case <-costTicker.C:
 			ticks++
 		}
 	}
 	max := 9999
-	for _, val := range costs{
+	for _, val := range costs {
 		if val.cost < max {
-			max = [newOrder.elevator,val.cost]
+			max = val.cost
+			newOrder.elevator = val.elevator
 		}
 	}
-	if newOrder.elevator != -1{
-		data = go addOrder(data,newOrder)
+	if newOrder.elevator != -1 {
+		data = addOrder(data, newOrder)
 	} else {
 		//error, no costs received
 	}
@@ -190,16 +202,34 @@ func readFile() []Order {
 	return data
 }
 
-func writeToFile(data []Order) {
+func getOrderString() string {
+	var valueStr string
+	for i := 0; i < (len(data) / (numElevators + 1)); i++ {
+		values := data[((numElevators + 1) * i):((numElevators+1)*i + (numElevators + 1))]
+		var value []string
+		for j := 0; j < 3; j++ {
+
+			value = append(value, strconv.FormatInt(values[j].toFloor, 10))
+			value = append(value, strconv.FormatInt(values[j].direction, 10))
+			value = append(value, strconv.FormatUint(values[j].timestamp, 10))
+		}
+		for j := 0; j < 3*numElevators+1; j++ {
+			valueStr = valueStr + value[j] + ","
+		}
+		valueStr = valueStr[:len(valueStr)-1] + ";"
+	}
+	return valueStr
+}
+
+func writeToFile() {
 	fmt.Println("before write")
 	file, err := os.Create("orders.csv")
 	checkError("Cannot create file", err)
 	defer file.Close()
 	writer := csv.NewWriter(file)
 	defer writer.Flush()
-
-	for i := 0; i < (len(data) / (numElevators+1))); i++ {
-		values := data[((numElevators+1) * i):((numElevators+1)*i + (numElevators+1))]
+	for i := 0; i < (len(data) / (numElevators + 1)); i++ {
+		values := data[((numElevators + 1) * i):((numElevators+1)*i + (numElevators + 1))]
 		var value []string
 		for j := 0; j < 3; j++ {
 
@@ -214,12 +244,12 @@ func writeToFile(data []Order) {
 			valueStr = valueStr + value[j] + ","
 		}
 		valueStr = valueStr[:len(valueStr)-1]
-		err := writer.Write(value)
+		err := writer.Write(Split(getOrderString(data), ";"))
 		checkError("Cannot write to file", err)
 	}
 }
 
-func addOrder(data []Order, newOrder Order) []Order {
+func addOrder(newOrder Order) []Order {
 	blankOrder := Order{
 		elevator:  0,
 		toFloor:   0,
@@ -241,7 +271,7 @@ func addOrder(data []Order, newOrder Order) []Order {
 	return data
 }
 
-func removeOrder(data []Order, toRemove Order) []Order {
+func removeOrder(toRemove Order) []Order {
 	blankOrder := Order{
 		elevator:  0,
 		toFloor:   0,
