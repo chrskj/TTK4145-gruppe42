@@ -31,7 +31,16 @@ type Elev struct {
 	ordersQueue [numFloors][numOrderTypes]bool
 }
 
-type Order struct {
-    Dir Direction
-    Floor int
+type order struct {
+	floor int
+	direction int //0 er ned og 1 er opp
+}
+
+type ChannelPacket struct{
+	packetType string
+	elevatorID int
+	toFloor int64
+	direction int64
+	timestamp uint64
+	cost float64
 }

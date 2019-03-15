@@ -9,18 +9,43 @@ package communication
 import (
 	//"flag"
 	"fmt"
-	//"os"
+	"os"
 	"time"
 	//"math/rand"
     //"strconv"
     "github.com/chrskj/TTK4145-gruppe44/code/network/bcast"
     "github.com/chrskj/TTK4145-gruppe44/code/network/peers"
-    //. "github.com/chrskj/TTK4145-gruppe44/code/util"
+    . "github.com/chrskj/TTK4145-gruppe44/code/util"
 )
 
 type MessageStruct struct {
 	Message string
 	Iter    int
+}
+
+func Initialize(toElevAlgo, toOrders, fromElevAlgo,
+        fromOrders chan ChannelPacket) {
+    id := fmt.Sprintf("%d", os.Getpid())
+
+    go SendHeartbeat(id)
+    go ReceiveHeartbeat()
+    go ReceiveMessage()
+
+    for {
+        select {
+        case temp := <-fromElevAlgo:
+            fmt.Println(temp)
+        case temp := <-fromOrders:
+            fmt.Println(temp)
+        case temp := <-toElevAlgo:
+            fmt.Println(temp)
+        case temp := <-toOrders:
+            fmt.Println(temp)
+        default:
+            fmt.Println("    .")
+			time.Sleep(1000 * time.Millisecond)
+        }
+    }
 }
 
 func SendHeartbeat(id string) {
@@ -42,18 +67,6 @@ func ReceiveHeartbeat() {
     }
 }
 
-func SendMessage(id string) {
-	sendMessage := make(chan MessageStruct)
-	go bcast.Transmitter(16570, sendMessage)
-
-    helloMsg := MessageStruct{"Hello from " + id, 0}
-    for {
-        helloMsg.Iter++
-        sendMessage <- helloMsg
-        time.Sleep(1 * time.Second)
-    }
-}
-
 func ReceiveMessage() {
     receiveMessage := make(chan MessageStruct)
     go bcast.Receiver(16570, receiveMessage)
@@ -65,30 +78,14 @@ func ReceiveMessage() {
     }
 }
 
-/*
-func ListenForModules(fromElevAlgo, fromOrder, toElevAlgo, toOrder) {
-    for {
-        select {
-        case <-fromElevAlgo:
-            fmt.Printf("elevAlgo")
-        case <-fromOrders:
-            fmt.Printf("orders")
-        default:
-            fmt.Println("    .")
-			time.Sleep(50 * time.Millisecond)
-        }
-    }
-}
-*/
+func SendMessage(id string) {
+	sendMessage := make(chan MessageStruct)
+	go bcast.Transmitter(16570, sendMessage)
 
-func ListenForModules(fromElevAlgo chan int) {
+    helloMsg := MessageStruct{"Hello from " + id, 0}
     for {
-        select {
-        case temp := <-fromElevAlgo:
-            fmt.Println(temp)
-        default:
-            fmt.Println("    .")
-			time.Sleep(1000 * time.Millisecond)
-        }
+        helloMsg.Iter++
+        sendMessage <- helloMsg
+        time.Sleep(1 * time.Second)
     }
 }

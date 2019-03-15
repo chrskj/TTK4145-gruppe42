@@ -1,49 +1,30 @@
 package main
 
 import (
-	//"./network/localip"
-	//"./network/peers"
-	//"flag"
-	"fmt"
-	"os"
-	//"time"	
-	//"math/rand"	
-    //"strconv"
+    "fmt"
+    //orders "github.com/chrskj/TTK4145-gruppe44/code/communication"
+    //elevAlgo "github.com/chrskj/TTK4145-gruppe44/code/communication"
     com "github.com/chrskj/TTK4145-gruppe44/code/communication"
-    //. "github.com/chrskj/TTK4145-gruppe44/code/util"
+    . "github.com/chrskj/TTK4145-gruppe44/code/util"
 )
 
 func main() {
     fmt.Println("Started")
 
-    id := fmt.Sprintf("%d", os.Getpid())
+    //elevAlgoToOrders := make(chan ChannelPacket)
+    //ordersToElevAlgo := make(chan ChannelPacket)
 
-    //elevAlgoToOrders := make(chan int)
-    //ordersToElevAlgo := make(chan int)
+    comToElevAlgo := make(chan ChannelPacket)
+    elevAlgoToCom := make(chan ChannelPacket)
 
-    //comToElevAlgo := make(chan int)
-    //elevAlgoToCom := make(chan int)
+    ordersToCom := make(chan ChannelPacket)
+    comToOrders := make(chan ChannelPacket)
 
-    //ordersToCom := make(chan struct med noe)
-    //comToOrders := make(chan struct med noe)
-
-    go com.SendHeartbeat(id)
-    go com.ReceiveHeartbeat()
-    //go com.SendMessage(id)
-    go com.ReceiveMessage()
-
-    //go com.ListenForModules(elevAlgoToCom, ordersToCom, comToElevAlgo,
-    //    comToOrders)
-    //go com.ListenForModules(elevAlgoToCom)
-
-    /*
-    //test-func
-    go func() {
-        for i := 0; i < 10; i++ {
-			elevAlgoToCom<-i
-        }
-    }()
-    */
+    //go orders.Initialize(ordersToCom, comToOrders, ordersToElevAlgo,
+    //    elevAlgoToOrders)
+    //go elevAlgo.Initialize(elevAlgoToCom, elevAlgoToOrders, comToElevAlgo,
+    //    ordersToElevAlgo)
+    go com.Initialize(comToElevAlgo, comToOrders, elevAlgoToCom, ordersToCom)
 
     for{}
 }
