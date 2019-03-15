@@ -34,7 +34,7 @@ costFuncToCom := make(chan float)
 //Kanal heisalgo -> komm (ny ordre )
 newOrderToCom := make(chan orderStruct)
 
-go orders.init(ordersToCom, comToOrders,ordersToElevAlgo,elevAlgoToOrders)
+go orders.initialize(ordersToCom, comToOrders,ordersToElevAlgo,elevAlgoToOrders)
 go elevAlgo.main(ordersToElevAlgo,elevAlgoToOrders, comToElevAlgo,costFuncToCom,newOrderToCom)
 go com(comToElevAlgo,elevAlgoToCom)
 
