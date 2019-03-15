@@ -26,7 +26,7 @@ const (
 type FSM_state int
 
 const (
-	init          FSM_state = 0
+	initialize    FSM_state = 0
 	idle          FSM_state = 1
 	running       FSM_state = 2
 	doorOpen      FSM_state = 3
@@ -93,18 +93,24 @@ func main(ordersToElevAlgo, elevAlgoToOrders, comToElevAlgo, costFuncToCom, newO
 			costFuncToCom <- calculateCostFunc(a,elevator)
 
 		case a := <-drv_buttons:
-			fmt.Printf("%+v\n", a)
+			//This will go straight to orders!
+			fmt.Printf("Recieved new order, this one is sent to orders! \n", a)
 
 			elevio.SetButtonLamp(a.Button, a.Floor, true)
 
 		case a := <-drv_floors:
+			var a_temp int
+			if a_temp != a {
 			fmt.Printf("We are on floor nr. %+v\n", a)
 			elevator.Floor = a
 			elevAlgoToOrders <- a //Sends the current floor to orders
 			if utils.utilShouldStop(elevator){
 				elevio.SetMotorDirection(elevio.MD_Stop)
 				ordersQueue[a][2] = 0 //erases order from queue
-			}
+				doorTimedOut.Reset(3 * time.Second)//begin 3 seconds of waiting for people to enter and leave car
+				elevio.SetDoorOpenLamp(1)
+			}}
+			a_temp = a
 			
 
 		case a := <-drv_obstr:
@@ -119,12 +125,28 @@ func main(ordersToElevAlgo, elevAlgoToOrders, comToElevAlgo, costFuncToCom, newO
 
 		case a := <-drv_stop:	
 			elevState = emergencyStop
-			fmt.Printf("%+v\n", a)
-			elevFSM.FSMemergencyStop()
+			fmt.Printf("Entered shit-hit-the-fan-mode \n", a)
+			elevio.SetMotorDirection(elevio.MD_Stop)
+			//si ifra om emergency stop
+
 
 		
 		case <-engineWatchDog.TimeOverChannel():
-			fmt.Printf("Engine has timed out. Error error error.")
+			fmt.Printf("Engine has timed out. Entering emergency stop mode .\n")
+			drv_stop <- 1
 		}
+
+		case <-doorTimedOut.C:
+			elevio.SetDoorOpenLamp(0)
+			elevator.Dir = chooseDirection(elevator)
+			elevio.SetMotorDirection(elevator.Dir)
+			if elevator.Dir == DirStop {
+				elevator.State = idle
+				engineWatchDog.Stop()
+			}else {
+				elevator.State = running
+			}
+
+
 	}
 }
