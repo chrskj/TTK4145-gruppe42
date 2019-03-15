@@ -1,4 +1,3 @@
-//Keep a queue
 //spawne phoenix backup
 //execute elevator
 //calculate cost function
@@ -14,6 +13,12 @@ import utils "./elevUtilFuncs"
 var numFloors int = 4
 var numOrderTypes int = 3
 var currentFloor int
+
+
+type order struct{
+	int floor
+	int direction //0 er ned og 1 er opp
+}
 
 type button int
 
@@ -93,10 +98,21 @@ func main(ordersToElevAlgo, elevAlgoToOrders, comToElevAlgo, costFuncToCom, newO
 			costFuncToCom <- calculateCostFunc(a,elevator)
 
 		case a := <-drv_buttons:
-			//This will go straight to orders!
-			fmt.Printf("Recieved new order, this one is sent to orders! \n", a)
+			//This will go straight to orders, unless its a cab call!
+			NewOrder := order{
+				floor: a.Floor
+				direction: 0
+			}
+			if a.Button == BT_HallUp{
+				NewOrder.direction = 1
+				elevAlgoToOrders <-NewOrder
+			}else if a.Button == BT_HallDown{
+				NewOrder.direction = 0
+				elevAlgoToOrders <-NewOrder
+			}else {
+				elevator.Queue[a.floor][buttonCab] = 1
+			}
 
-			elevio.SetButtonLamp(a.Button, a.Floor, true)
 
 		case a := <-drv_floors:
 			var a_temp int
