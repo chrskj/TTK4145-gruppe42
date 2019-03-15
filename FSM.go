@@ -7,12 +7,12 @@ func FSMinit() {
 
 	var d elevio.MotorDirection = elevio.MD_Up
 	elevio.SetMotorDirection(d)
-	if 
+
 }
 
 func FSMidle() {
 	if countOrders() {
-		
+
 	}
 }
 

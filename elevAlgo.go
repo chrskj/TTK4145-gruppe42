@@ -8,13 +8,20 @@ package elevAlgo
 import "./elevio"
 import "fmt"
 import "./elevFSM"
+import w "./watchdog"
+import utils "./elevUtilFuncs"
 
-//Variables that need initializing:
-// -orders
-// -current floor
 var numFloors int = 4
 var numOrderTypes int = 3
 var currentFloor int
+
+type button int
+
+const (
+	buttonDown button = 0
+	buttonCab = 1
+	buttonUp = 2
+)
 
 type FSM_state int
 
@@ -53,10 +60,15 @@ func main(ordersToElevAlgo, elevAlgoToOrders, comToElevAlgo, costFuncToCom, newO
 		Queue: [numFloors][numOrderTypes]bool{},
 	}
 
+	//Start watchdogs
+	engineWatchDog:= w.New(time.Second)
+	engineWatchDog.Reset()
+	engineWatchDog.Stop()
+
+	
 	//Start timers
-	//Doortimer
-	//engineFailureTimer
-	//
+	doorTimer := time.NewTimer(3* time.Second)
+	doorTimer.Stop()
 
 	//Initialize channels
 	drv_buttons := make(chan elevio.ButtonEvent)
@@ -74,9 +86,8 @@ func main(ordersToElevAlgo, elevAlgoToOrders, comToElevAlgo, costFuncToCom, newO
 	for {
 		select {
 
-		//Write an FSM function under each case?
 		case a := <-ordersToElevAlgo: //recieves a new ordre from orders
-			ordersQueue[a.floor][a.direction] = 1
+			elevator.Queue[a.floor][a.direction] = 1
 
 		case a := <-comToElevAlgo:
 			costFuncToCom <- calculateCostFunc(a,elevator)
@@ -87,16 +98,14 @@ func main(ordersToElevAlgo, elevAlgoToOrders, comToElevAlgo, costFuncToCom, newO
 			elevio.SetButtonLamp(a.Button, a.Floor, true)
 
 		case a := <-drv_floors:
-			fmt.Printf("%+v\n", a)
-			currentFloor = a
+			fmt.Printf("We are on floor nr. %+v\n", a)
+			elevator.Floor = a
 			elevAlgoToOrders <- a //Sends the current floor to orders
-			ordersQueue[a][2] = 0
-			if a == numFloors-1 {
-				d = elevio.MD_Down
-			} else if a == 0 {
-				d = elevio.MD_Up
+			if utils.utilShouldStop(elevator){
+				elevio.SetMotorDirection(elevio.MD_Stop)
+				ordersQueue[a][2] = 0 //erases order from queue
 			}
-			elevio.SetMotorDirection(d)
+			
 
 		case a := <-drv_obstr:
 			fmt.Printf("%+v\n", a)
@@ -108,11 +117,14 @@ func main(ordersToElevAlgo, elevAlgoToOrders, comToElevAlgo, costFuncToCom, newO
 				elevState = running
 			}
 
-		case a := <-drv_stop:
+		case a := <-drv_stop:	
 			elevState = emergencyStop
 			fmt.Printf("%+v\n", a)
 			elevFSM.FSMemergencyStop()
 
+		
+		case <-engineWatchDog.TimeOverChannel():
+			fmt.Printf("Engine has timed out. Error error error.")
 		}
 	}
 }
