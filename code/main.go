@@ -5,39 +5,45 @@ import (
 	//"./network/peers"
 	//"flag"
 	"fmt"
-	//"os"
+	"os"
 	//"time"	
 	//"math/rand"	
     //"strconv"
     com "github.com/chrskj/TTK4145-gruppe44/code/communication"
+    //. "github.com/chrskj/TTK4145-gruppe44/code/util"
 )
-
-//Starte alle kanaler
-//Starte alle gorutines, og passe kanaler som input arguments
-
-//Kanal orders -> komm (orders)
-//ordersToCom := make(chan struct med noe)
-//Kanal komm -> orders (orders)
-//comToOrders := make(chan struct med noe)
-
-//Kanal orders -> heisalgo (ønsket floor)
-//ordersToElevAlgo := make(chan int)
-//Kanal heisalgo -> orders (current floor)
-//elevAlgoToOrders := make(chan int)
-
-//Kanal komm -> heisalgo (request om cost function)
-//comToElevAlgo := make(chan int)
-//Kanal heisalgo -> komm (cost function)
-//elevAlgoToCom := make(chan float)
-
-//go orders(ordersToCom, comToOrders)
-//go elevAlgo(ordersToElevAlgo,elevAlgoToOrders)
-//go com(comToElevAlgo,elevAlgoToCom)
 
 func main() {
     fmt.Println("Started")
-    go com.SendHeartbeat()
-    go com.ListenHeartbeat()
-    go com.ListenMessage()
+
+    id := fmt.Sprintf("%d", os.Getpid())
+
+    //elevAlgoToOrders := make(chan int)
+    //ordersToElevAlgo := make(chan int)
+
+    //comToElevAlgo := make(chan int)
+    //elevAlgoToCom := make(chan int)
+
+    //ordersToCom := make(chan struct med noe)
+    //comToOrders := make(chan struct med noe)
+
+    go com.SendHeartbeat(id)
+    go com.ReceiveHeartbeat()
+    //go com.SendMessage(id)
+    go com.ReceiveMessage()
+
+    //go com.ListenForModules(elevAlgoToCom, ordersToCom, comToElevAlgo,
+    //    comToOrders)
+    //go com.ListenForModules(elevAlgoToCom)
+
+    /*
+    //test-func
+    go func() {
+        for i := 0; i < 10; i++ {
+			elevAlgoToCom<-i
+        }
+    }()
+    */
+
     for{}
 }
