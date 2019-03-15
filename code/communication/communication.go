@@ -7,57 +7,54 @@ package communication
 // - ta imot orders sin ordrelsite og sende ut
 
 import (
-    "github.com/chrskj/TTK4145-gruppe44/code/network/bcast"
-	//"./network/localip"
-	//"./network/peers"
 	//"flag"
 	"fmt"
 	//"os"
 	"time"
-	"math/rand"
+	//"math/rand"
     //"strconv"
+    "github.com/chrskj/TTK4145-gruppe44/code/network/bcast"
+    "github.com/chrskj/TTK4145-gruppe44/code/network/peers"
+    //. "github.com/chrskj/TTK4145-gruppe44/code/util"
 )
 
 type MessageStruct struct {
 	Message string
+	Iter    int
 }
 
-func SendHeartbeat() {
-    rand.Seed(time.Now().UnixNano())
-    ranInt := rand.Intn(20)
-    transmitHeartbeat := make(chan MessageStruct)
-    go bcast.Transmitter(16569, transmitHeartbeat)
-    response := fmt.Sprintf("Heartbeat from %d", ranInt)
-    helloMsg := MessageStruct{response}
+func SendHeartbeat(id string) {
+	peerTxEnable := make(chan bool)
+	go peers.Transmitter(16569, id, peerTxEnable)
+}
+
+func ReceiveHeartbeat() {
+	peerUpdateCh := make(chan peers.PeerUpdate)
+	go peers.Receiver(16569, peerUpdateCh)
+	for {
+		select {
+		case p := <-peerUpdateCh:
+			fmt.Printf("Peer update:\n")
+			fmt.Printf("  Peers:    %q\n", p.Peers)
+			fmt.Printf("  New:      %q\n", p.New)
+			fmt.Printf("  Lost:     %q\n", p.Lost)
+		}
+    }
+}
+
+func SendMessage(id string) {
+	sendMessage := make(chan MessageStruct)
+	go bcast.Transmitter(16570, sendMessage)
+
+    helloMsg := MessageStruct{"Hello from " + id, 0}
     for {
-        transmitHeartbeat <- helloMsg
+        helloMsg.Iter++
+        sendMessage <- helloMsg
         time.Sleep(1 * time.Second)
     }
 }
 
-func ListenHeartbeat() {
-    receiveHeartbeat := make(chan MessageStruct)
-    go bcast.Receiver(16569, receiveHeartbeat)
-    for {
-        select {
-        case a := <-receiveHeartbeat:
-            fmt.Printf("Received: %v\n", a)
-        }
-    }
-}
-
-func SendMessage() {
-    transmitMessage := make(chan MessageStruct)
-    go bcast.Transmitter(16570, transmitMessage)
-    response := fmt.Sprintf("Heartbeat from %d", ranInt)
-    helloMsg := MessageStruct{response}
-    for {
-        transmitMessage<- helloMsg
-        time.Sleep(1 * time.Second)
-    }
-}
-
-func ListenMessage(addresse, beskjed) {
+func ReceiveMessage() {
     receiveMessage := make(chan MessageStruct)
     go bcast.Receiver(16570, receiveMessage)
     for {
@@ -68,8 +65,30 @@ func ListenMessage(addresse, beskjed) {
     }
 }
 
+/*
+func ListenForModules(fromElevAlgo, fromOrder, toElevAlgo, toOrder) {
+    for {
+        select {
+        case <-fromElevAlgo:
+            fmt.Printf("elevAlgo")
+        case <-fromOrders:
+            fmt.Printf("orders")
+        default:
+            fmt.Println("    .")
+			time.Sleep(50 * time.Millisecond)
+        }
+    }
+}
+*/
 
-
-
-
-
+func ListenForModules(fromElevAlgo chan int) {
+    for {
+        select {
+        case temp := <-fromElevAlgo:
+            fmt.Println(temp)
+        default:
+            fmt.Println("    .")
+			time.Sleep(1000 * time.Millisecond)
+        }
+    }
+}
