@@ -101,6 +101,8 @@ func orderRoutine(ordersToCom chan ChannelPacket, comToOrders chan ChannelPacket
 					dataJson:   getOrderJson(),
 				}
 				ordersToCom <- packet
+			case "orderJson":
+				json.Unmarshal(temp.dataJson, data)
 			}
 		case temp := <-elevAlgoToOrders:
 			switch temp.packetType {
@@ -161,6 +163,18 @@ func costCompare(newOrder Order, ordersToCom chan ChannelPacket) {
 	}
 	if newOrder.elevator != -1 {
 		data = addOrder(newOrder)
+		temp := ChannelPacket{
+			packetType: "newOrder"
+			elevator: newOrder.elevator
+			toFloor:	newOrder.toFloor
+			direction:	newOrder.direction
+			timestamp: newOrder.timestamp
+		}
+		if temp.elevator == thisElevator {
+			ordersToElevAlgo <- temp
+		} else {
+			ordersToCom <- temp
+		}
 	} else {
 		//error, no costs received
 	}
