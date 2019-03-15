@@ -22,6 +22,8 @@ import (
 )
 
 var numElevators int = 3
+var thisElevator int
+var costChan chan ChannelPacket
 
 type Order struct {
 	elevator  int
@@ -53,25 +55,19 @@ func init(ordersToCom, comToOrders,ordersToElevAlgo,elevAlgoToOrders) {
 	//data = readFile()
 	//try to get data from others
 
+	//get elevator ID
 
 	go orderRoutine(data)
 }
 
-func costCompare(costChan chan OcomPacket){
-	for recievedOrders :=0; recievedOrders<numElevators;{
-		select{
-			case <-
-		}
-	}
-}
-
 func orderRoutine(data []Order,ordersToCom chan ChannelPacket, comToOrders chan ChannelPacket,ordersToElevAlgo chan ChannelPacket,elevAlgoToOrders chan ChannelPacket){
+	var costChan chan ChannelPacket
 	for{
 		select{
 		case temp:= <- comToOrders:
 			switch temp.packetType{
 			case "compareCost":
-				//compare costs
+				costChan <- temp
 			case "orderComplete":
 				toRemove := Order{
 					elevator:  temp.elevator
@@ -89,16 +85,72 @@ func orderRoutine(data []Order,ordersToCom chan ChannelPacket, comToOrders chan 
 				}
 				addOrder(newOrder)
 			case "getOrderList":
+				packet := Order{
+					packetType: "orderList"
 
+				}
+				ordersToCom <- 
 			}
 		case temp:= <- elevAlgoToOrders:
 			switch temp.packetType{
 			case "buttonPress":
+				newOrder := Order{
+					elevator: -1
+					toFloor: temp.toFloor
+					direction: temp.direction
+					timestamp: tstamp
+				}
 				//check if order already exists
-				//if not:
-				//start compare costs timer, tell comm to ask for cost functions.
+				for index, value := range data {
+					if value.toFloor == newOrder.toFloor && value.direction == newOrder.direction {
+						newOrder.timestamp = 0
+						break
+					}
+				}
+				//if not: start the cost compare
+				if newOrder.timestamp>0{
+					go costCompare(newOrder, ordersToCom)
+				}
 			}
 		}
+	}
+}
+
+func costCompare(newOrder Order,ordersToCom chan ChannelPacket){
+	ordersToCom <- ChannelPacket{
+		packetType: "requestCostFunc"
+		elevator: thisElevator
+	}
+	costTicker := time.NewTicker(10*time.Millisecond)
+	var ticks uint = 0
+	var costs []ChannelPacket
+	for recievedOrders :=0; recievedOrders<numElevators && ticks<200;{
+		select{
+		case temp <- costChan:
+			unique := true
+			for _,val := range costs{
+				if val == temp{
+					unique = false
+				}
+			}
+			if unique {
+				costs = append(costs, temp)
+				recievedOrders++
+			}
+		case <- costTicker.C:
+			ticks++
+		}
+	}
+	max := 9999
+	for _, val := range costs{
+		if val.cost < max {
+			max = [newOrder.elevator,val.cost]
+		}
+	}
+	if newOrder.elevator != -1{
+		data = go addOrder(data,newOrder)
+	} else {
+		//error, no costs received
 	}
 }
 
@@ -175,10 +227,6 @@ func addOrder(data []Order, newOrder Order) []Order {
 		timestamp: 0,
 	}
 	for index, value := range data {
-		if value.toFloor == newOrder.toFloor && value.direction == newOrder.direction {
-			newOrder.timestamp = 0
-			break
-		}
 		if value.timestamp == 0 && value.elevator == newOrder.elevator {
 			data[index] = newOrder
 			newOrder.timestamp = 0

@@ -6,18 +6,26 @@ type orderStruct struct {
 	int direction //0 er ned og 1 er opp
 } 
 
+type ChannelPacket struct{
+	packetType string
+	elevator int
+	toFloor int64
+	direction int64
+	timestamp uint64
+	cost float64
+}
 
 //Kanal orders -> komm (orders)
-ordersToCom := make(chan struct med noe)
+ordersToCom := make(chan struct ChannelPacket)
 
 //Kanal komm -> orders (orders)
-comToOrders := make(chan struct med noe)
+comToOrders := make(chan struct ChannelPacket)
 
 
 //Kanal orders -> heisalgo (ønsket floor, direction)
-ordersToElevAlgo := make(chan orderStruct)
+ordersToElevAlgo := make(chan ChannelPacket)
 //Kanal heisalgo -> orders (current floor)
-elevAlgoToOrders := make(chan int)
+elevAlgoToOrders := make(chan ChannelPacket)
 
 //Kanal komm -> heisalgo (request om cost function)
 comToElevAlgo := make(chan orderStruct)
