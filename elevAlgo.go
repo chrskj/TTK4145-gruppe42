@@ -7,58 +7,79 @@ package elevAlgo
 
 import "./elevio"
 import "fmt"
+import "./elevFSM"
 
 //Variables that need initializing:
 // -orders
 // -current floor
-var numFloors int= 4
+var numFloors int = 4
 var numOrderTypes int = 3
 var currentFloor int
-var ordersQueue bool[numFloors][numOrderTypes] //første indeks: etasjenr, andre indeks: 0 = ned, 1 = opp, 2 = cab. True or false 
 
-func countOrders(){
-	var sum int
-	for i := 0; i < numFloors; i++ {
-		for j := 0; j < numOrderTypes; j++ {
-			sum = sum + ordersQueue[i][j]
-		}
-	}
+type FSM_state int
+
+const (
+	init          FSM_state = 0
+	idle          FSM_state = 1
+	running       FSM_state = 2
+	doorOpen      FSM_state = 3
+	emergencyStop FSM_state = 4
+)
+
+type Direction int
+
+const (
+	DirDown Direction = iota - 1
+	DirStop
+	DirUp
+)
+
+type Elev struct {
+	State FSM_state
+	Dir Direction
+	Floor int
+	ordersQueue [numFloors][numOrderTypes]bool
 }
 
-func calculateCostFunc(orderStruct order){
+func calculateCostFunc(orderStruct order) {
 	return countOrders()
 }
 
-func FSM(){
-	
-}
+func main(ordersToElevAlgo, elevAlgoToOrders, comToElevAlgo, costFuncToCom, newOrderToCom) {
+	elevator := Elev{
+		State: idle,
+		Dir: DirStop,
+		Floor: //get floor sensor signal
+		Queue: [numFloors][numOrderTypes]bool{},
+	}
 
-func main(ordersToElevAlgo,elevAlgoToOrders, comToElevAlgo,costFuncToCom,newOrderToCom) {
+	//Start timers
+	//Doortimer
+	//engineFailureTimer
+	//
 
-	numFloors := 4
-	elevio.Init("localhost:15657", numFloors)
-
-	var d elevio.MotorDirection = elevio.MD_Up
-	//elevio.SetMotorDirection(d)
-
+	//Initialize channels
 	drv_buttons := make(chan elevio.ButtonEvent)
 	drv_floors := make(chan int)
 	drv_obstr := make(chan bool)
 	drv_stop := make(chan bool)
 
+	//Start polling
 	go elevio.PollButtons(drv_buttons)
 	go elevio.PollFloorSensor(drv_floors)
 	go elevio.PollObstructionSwitch(drv_obstr)
 	go elevio.PollStopButton(drv_stop)
+	elevFSM.FSMinit()
 
 	for {
 		select {
 
+		//Write an FSM function under each case?
 		case a := <-ordersToElevAlgo: //recieves a new ordre from orders
 			ordersQueue[a.floor][a.direction] = 1
 
 		case a := <-comToElevAlgo:
-			costFuncToCom <- calculateCostFunc(a)
+			costFuncToCom <- calculateCostFunc(a,elevator)
 
 		case a := <-drv_buttons:
 			fmt.Printf("%+v\n", a)
@@ -81,17 +102,17 @@ func main(ordersToElevAlgo,elevAlgoToOrders, comToElevAlgo,costFuncToCom,newOrde
 			fmt.Printf("%+v\n", a)
 			if a {
 				elevio.SetMotorDirection(elevio.MD_Stop)
+				elevState = doorOpen
 			} else {
 				elevio.SetMotorDirection(d)
+				elevState = running
 			}
 
 		case a := <-drv_stop:
+			elevState = emergencyStop
 			fmt.Printf("%+v\n", a)
-			for f := 0; f < numFloors; f++ {
-				for b := elevio.ButtonType(0); b < 3; b++ {
-					elevio.SetButtonLamp(b, f, false)
-				}
-			}
+			elevFSM.FSMemergencyStop()
+
 		}
 	}
 }
