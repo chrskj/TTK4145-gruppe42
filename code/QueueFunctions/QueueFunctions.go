@@ -1,4 +1,4 @@
-package queueFunctions
+package QueueFunctions
 
 import (
 	. "../util"

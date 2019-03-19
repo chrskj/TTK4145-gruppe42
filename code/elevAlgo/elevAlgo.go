@@ -8,7 +8,7 @@ import (
 	"../elevio"
  	"fmt"
 	 w "../watchdog"
-	utils "../queueFunctions" 
+	"../QueueFunctions" 
 	. "../util"
 )
 
@@ -22,8 +22,8 @@ func main(ordersToElevAlgo, elevAlgoToOrders, comToElevAlgo, costFuncToCom, newO
 	elevator := Elev{
 		State: idle,
 		Dir: DirStop,
-		Floor: //get floor sensor signal
-		Queue: [numFloors][numOrderTypes]bool{},
+		Floor: 2,//Hvordan sette denne?
+		Queue: [NumFloors][NumOrderTypes]bool{},
 	}
 
 	//Start watchdogs
@@ -69,8 +69,8 @@ func main(ordersToElevAlgo, elevAlgoToOrders, comToElevAlgo, costFuncToCom, newO
 		case a := <-drv_buttons:
 			//This will go straight to orders, unless its a cab call!
 			NewOrder := order{
-				floor: a.Floor
-				direction: 0
+				floor: a.Floor,
+				direction: 0,
 			}
 			if a.Button == BT_HallUp{
 				NewOrder.direction = 1
@@ -88,7 +88,7 @@ func main(ordersToElevAlgo, elevAlgoToOrders, comToElevAlgo, costFuncToCom, newO
 			fmt.Printf("We are on floor nr. %+v\n", a)
 			elevator.Floor = a
 			elevAlgoToOrders <- a //Sends the current floor to orders
-			if utils.utilShouldStop(elevator){
+			if QueueFunctions.utilShouldStop(elevator){
 				elevio.SetMotorDirection(elevio.MD_Stop)
 				ordersQueue[a][buttonCab] = 0 //erases cab order from queue
 				ordersQueue[a][a.direction+1] = 0 //erases order in correct direction
