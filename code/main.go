@@ -4,7 +4,7 @@ import (
 	"./elevAlgo"
 	"fmt"
 	"os"
-
+	"./util"
 
 )
 
@@ -15,27 +15,27 @@ type orderStruct struct {
 
 
 //Kanal orders -> komm (orders)
-ordersToCom := make(chan struct med noe)
+//ordersToCom := make(chan struct med noe)
 
 //Kanal komm -> orders (orders)
-comToOrders := make(chan struct med noe)
+//comToOrders := make(chan struct med noe)
 
 
 //Kanal orders -> heisalgo (ønsket floor, direction)
-ordersToElevAlgo := make(chan orderStruct)
+OrdersToElevAlgo := make(chan Order)
 //Kanal heisalgo -> orders (current floor)
-elevAlgoToOrders := make(chan int)
+ElevAlgoToOrders := make(chan Order)
 
 //Kanal komm -> heisalgo (request om cost function)
-comToElevAlgo := make(chan orderStruct)
+ComToElevAlgo := make(chan orderStruct)
 //Kanal heisalgo -> komm (cost function)
-costFuncToCom := make(chan float)
+CostFuncToCom := make(chan int)
 //Kanal heisalgo -> komm (ny ordre )
-newOrderToCom := make(chan orderStruct)
+NewOrderToCom := make(chan Order)
 
-go orders(ordersToCom, comToOrders)
-go elevAlgo.main(ordersToElevAlgo,elevAlgoToOrders, comToElevAlgo,costFuncToCom,newOrderToCom)
-go com(comToElevAlgo,elevAlgoToCom)
+//go orders(ordersToCom, comToOrders)
+go elevAlgo.ElevStateMachine(ordersToElevAlgo,elevAlgoToOrders, comToElevAlgo,costFuncToCom,newOrderToCom)
+//go com(comToElevAlgo,elevAlgoToCom)
 
 //done
 

@@ -4,36 +4,34 @@
 //
 package elevAlgo
 
-import ( 
+import (
+	"fmt"
+	"time"
+
+	. "../QueueFunctions"
 	"../elevio"
- 	"fmt"
-	 w "../watchdog"
-	"../QueueFunctions" 
 	. "../util"
+	w "../watchdog"
 )
 
 var currentFloor int
-var a_temp int
+var aTemp int
 
-
-
-
-func main(ordersToElevAlgo, elevAlgoToOrders, comToElevAlgo, costFuncToCom, newOrderToCom) {
+func ElevStateMachine(chan Order OrdersToElevAlgo, chan Order ElevAlgoToOrders , chan OrderStruct ComToElevAlgo, chan int CostFuncToCom , chan Order NewOrderToCom) {
 	elevator := Elev{
-		State: idle,
-		Dir: DirStop,
-		Floor: 2,//Hvordan sette denne?
+		State: Idle,
+		Dir:   DirStop,
+		Floor: 2, //Hvordan sette denne?
 		Queue: [NumFloors][NumOrderTypes]bool{},
 	}
 
 	//Start watchdogs
-	engineWatchDog:= w.New(time.Second)
+	engineWatchDog := w.New(time.Second)
 	engineWatchDog.Reset()
 	engineWatchDog.Stop()
 
-	
 	//Start timers
-	doorTimer := time.NewTimer(3* time.Second)
+	doorTimer := time.NewTimer(3 * time.Second)
 	doorTimer.Stop()
 
 	//Initialize channels
@@ -47,77 +45,71 @@ func main(ordersToElevAlgo, elevAlgoToOrders, comToElevAlgo, costFuncToCom, newO
 	go elevio.PollFloorSensor(drv_floors)
 	go elevio.PollObstructionSwitch(drv_obstr)
 	go elevio.PollStopButton(drv_stop)
-	elevFSM.FSMinit()
+	//elevFSM.FSMinit()
 
 	for {
 		select {
 
 		case a := <-ordersToElevAlgo: //recieves a new ordre from orders
-		if a.Direction == 1{
-			elevator.Queue[a.floor][DirUp] = 1
-		}else if a.Direction == 0{
-			elevator.Queue[a.floor][DirDown] = 1
-		}else{
-			fmt.Printf("Something fishy in the orders from Orders, not 0 or 1!")
-		}
-
-			
+			if a.Direction == 1 {
+				elevator.Queue[a.floor][DirUp] = 1
+			} else if a.Direction == 0 {
+				elevator.Queue[a.floor][DirDown] = 1
+			} else {
+				fmt.Printf("Something fishy in the orders from Orders, not 0 or 1!")
+			}
 
 		case a := <-comToElevAlgo:
-			costFuncToCom <- calculateCostFunc(a,elevator)
+			costFuncToCom <- calculateCostFunc(a, elevator)
 
 		case a := <-drv_buttons:
 			//This will go straight to orders, unless its a cab call!
 			NewOrder := order{
-				floor: a.Floor,
+				floor:     a.Floor,
 				direction: 0,
 			}
-			if a.Button == BT_HallUp{
+			if a.Button == BT_HallUp {
 				NewOrder.direction = 1
-				elevAlgoToOrders <-NewOrder
-			}else if a.Button == BT_HallDown{
+				elevAlgoToOrders <- NewOrder
+			} else if a.Button == BT_HallDown {
 				NewOrder.direction = 0
-				elevAlgoToOrders <-NewOrder
-			}else {
+				elevAlgoToOrders <- NewOrder
+			} else {
 				elevator.Queue[a.floor][buttonCab] = 1
 			}
 
-
 		case a := <-drv_floors:
 			if a_temp != a {
-			fmt.Printf("We are on floor nr. %+v\n", a)
-			elevator.Floor = a
-			elevAlgoToOrders <- a //Sends the current floor to orders
-			if QueueFunctions.utilShouldStop(elevator){
-				elevio.SetMotorDirection(elevio.MD_Stop)
-				ordersQueue[a][buttonCab] = 0 //erases cab order from queue
-				ordersQueue[a][a.direction+1] = 0 //erases order in correct direction
-				//notify orders that its done!
-				doorTimedOut.Reset(3 * time.Second)//begin 3 seconds of waiting for people to enter and leave car
-				elevio.SetDoorOpenLamp(1)
-			}}
+				fmt.Printf("We are on floor nr. %+v\n", a)
+				elevator.Floor = a
+				//elevAlgoToOrders <- a //Sends the current floor to orders
+				if QueueFuncShouldStop(elevator) {
+					elevio.SetMotorDirection(elevio.MD_Stop)
+					ordersQueue[a][buttonCab] = 0     //erases cab order from queue
+					ordersQueue[a][a.direction+1] = 0 //erases order in correct direction
+					//notify orders that its done!
+					doorTimedOut.Reset(3 * time.Second) //begin 3 seconds of waiting for people to enter and leave car
+					elevio.SetDoorOpenLamp(1)
+				}
+			}
 			a_temp = a
-			
+
 		//If someone is trying to get into the elevator when doors are closing, the elevator will wait 3 more seconds
 		case a := <-drv_obstr:
 			fmt.Printf("Obstruction in door! Someone is trying to get in! \n")
 			elevio.SetMotorDirection(elevio.MD_Stop)
 			elevState = doorOpen
-			doorTimedOut.Reset(3*time.Second) 
-			
+			doorTimedOut.Reset(3 * time.Second)
 
-		case a := <-drv_stop:	
+		case a := <-drv_stop:
 			elevState = emergencyStop
 			fmt.Printf("Entered shit-hit-the-fan-mode \n", a)
 			elevio.SetMotorDirection(elevio.MD_Stop)
 			//si ifra om emergency stop
 
-
-		
 		case <-engineWatchDog.TimeOverChannel():
 			fmt.Printf("Engine has timed out. Entering emergency stop mode .\n")
 			drv_stop <- 1
-		}
 
 		case <-doorTimedOut.C:
 			elevio.SetDoorOpenLamp(0)
@@ -126,10 +118,10 @@ func main(ordersToElevAlgo, elevAlgoToOrders, comToElevAlgo, costFuncToCom, newO
 			if elevator.Dir == DirStop {
 				elevator.State = idle
 				engineWatchDog.Stop()
-			}else {
+			} else {
 				elevator.State = running
 			}
 
-
+		}
 	}
 }
