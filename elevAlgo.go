@@ -13,6 +13,7 @@ import utils "./elevUtilFuncs"
 var numFloors int = 4
 var numOrderTypes int = 3
 var currentFloor int
+var a_temp int
 
 
 type order struct{
@@ -92,7 +93,15 @@ func main(ordersToElevAlgo, elevAlgoToOrders, comToElevAlgo, costFuncToCom, newO
 		select {
 
 		case a := <-ordersToElevAlgo: //recieves a new ordre from orders
-			elevator.Queue[a.floor][a.direction] = 1
+		if a.Direction == 1{
+			elevator.Queue[a.floor][DirUp] = 1
+		}else if a.Direction == 0{
+			elevator.Queue[a.floor][DirDown] = 1
+		}else{
+			fmt.Printf("Something fishy in the orders from Orders, not 0 or 1!")
+		}
+
+			
 
 		case a := <-comToElevAlgo:
 			costFuncToCom <- calculateCostFunc(a,elevator)
@@ -115,29 +124,27 @@ func main(ordersToElevAlgo, elevAlgoToOrders, comToElevAlgo, costFuncToCom, newO
 
 
 		case a := <-drv_floors:
-			var a_temp int
 			if a_temp != a {
 			fmt.Printf("We are on floor nr. %+v\n", a)
 			elevator.Floor = a
 			elevAlgoToOrders <- a //Sends the current floor to orders
 			if utils.utilShouldStop(elevator){
 				elevio.SetMotorDirection(elevio.MD_Stop)
-				ordersQueue[a][2] = 0 //erases order from queue
+				ordersQueue[a][buttonCab] = 0 //erases cab order from queue
+				ordersQueue[a][a.direction+1] = 0 //erases order in correct direction
+				//notify orders that its done!
 				doorTimedOut.Reset(3 * time.Second)//begin 3 seconds of waiting for people to enter and leave car
 				elevio.SetDoorOpenLamp(1)
 			}}
 			a_temp = a
 			
-
+		//If someone is trying to get into the elevator when doors are closing, the elevator will wait 3 more seconds
 		case a := <-drv_obstr:
-			fmt.Printf("%+v\n", a)
-			if a {
-				elevio.SetMotorDirection(elevio.MD_Stop)
-				elevState = doorOpen
-			} else {
-				elevio.SetMotorDirection(d)
-				elevState = running
-			}
+			fmt.Printf("Obstruction in door! Someone is trying to get in! \n")
+			elevio.SetMotorDirection(elevio.MD_Stop)
+			elevState = doorOpen
+			doorTimedOut.Reset(3*time.Second) 
+			
 
 		case a := <-drv_stop:	
 			elevState = emergencyStop
