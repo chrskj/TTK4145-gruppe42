@@ -5,59 +5,18 @@
 package elevAlgo
 
 import ( 
-	"./elevio"
+	"../elevio"
  	"fmt"
-	 w "./watchdog"
-	utils "./queueFunctions" 
+	 w "../watchdog"
+	utils "../queueFunctions" 
+	. "../util"
 )
 
-var numFloors int = 4
-var numOrderTypes int = 3
 var currentFloor int
 var a_temp int
 
 
-type order struct{
-	int floor
-	int direction //0 er ned og 1 er opp
-}
 
-type button int
-
-const (
-	buttonDown button = 0
-	buttonCab = 1
-	buttonUp = 2
-)
-
-type FSM_state int
-
-const (
-	initialize    FSM_state = 0
-	idle          FSM_state = 1
-	running       FSM_state = 2
-	doorOpen      FSM_state = 3
-	emergencyStop FSM_state = 4
-)
-
-type Direction int
-
-const (
-	DirDown Direction = iota - 1
-	DirStop
-	DirUp
-)
-
-type Elev struct {
-	State FSM_state
-	Dir Direction
-	Floor int
-	ordersQueue [numFloors][numOrderTypes]bool
-}
-
-func calculateCostFunc(orderStruct order) {
-	return countOrders()
-}
 
 func main(ordersToElevAlgo, elevAlgoToOrders, comToElevAlgo, costFuncToCom, newOrderToCom) {
 	elevator := Elev{
