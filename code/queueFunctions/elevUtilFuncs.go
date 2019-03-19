@@ -1,4 +1,6 @@
-package queue
+package queueFunctions
+
+
 
 func calculateCostFunction(elevator Elev, order Order){
 	var cost int = 0

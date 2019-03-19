@@ -1,5 +1,12 @@
-import "./elevAlgo"
-import "fmt"
+package main
+
+import ( 
+	"./elevAlgo"
+	"fmt"
+	"os"
+
+
+)
 
 type orderStruct struct {
 	int floor

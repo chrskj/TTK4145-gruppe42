@@ -4,11 +4,12 @@
 //
 package elevAlgo
 
-import "./elevio"
-import "fmt"
-import "./elevFSM"
-import w "./watchdog"
-import utils "./elevUtilFuncs"
+import ( 
+	"./elevio"
+ 	"fmt"
+	 w "./watchdog"
+	utils "./queueFunctions" 
+)
 
 var numFloors int = 4
 var numOrderTypes int = 3
