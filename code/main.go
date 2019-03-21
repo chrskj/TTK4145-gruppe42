@@ -8,26 +8,25 @@ import (
 func main() {
 
 	//Kanal orders -> komm (orders)
-	//ordersToCom := make(chan struct med noe)
+  OrdersToCom := make(chan struct ChannelPacket)
 
-	//Kanal komm -> orders (orders)
-	//comToOrders := make(chan struct med noe)
+  //Kanal komm -> orders (orders)
+  ComToOrders := make(chan struct ChannelPacket)
 
-	//Kanal orders -> heisalgo (ønsket floor, direction)
-	OrdersToElevAlgo := make(chan Order)
-	//Kanal heisalgo -> orders (current floor)
-	ElevAlgoToOrders := make(chan Order)
 
-	//Kanal komm -> heisalgo (request om cost function)
-	ComToElevAlgo := make(chan Order)
-	//Kanal heisalgo -> komm (cost function)
-	CostFuncToCom := make(chan int)
-	//Kanal heisalgo -> komm (ny ordre )
-	NewOrderToCom := make(chan Order)
+  //Kanal orders -> heisalgo (ønsket floor, direction)
+  OrdersToElevAlgo := make(chan ChannelPacket)
+  //Kanal heisalgo -> orders (current floor)
+  ElevAlgoToOrders := make(chan ChannelPacket)
 
-	//go orders(ordersToCom, comToOrders)
-	go elevAlgo.ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo, CostFuncToCom, NewOrderToCom)
-	//go com(comToElevAlgo,elevAlgoToCom)
+  //Kanal komm -> heisalgo (request om cost function)
+  ComToElevAlgo := make(chan orderStruct)
+  //Kanal heisalgo -> komm (cost function)
+  ElevAlgoToCom := make(chan orderStruct)
+
+  go orders.initialize(ordersToCom, comToOrders,ordersToElevAlgo,elevAlgoToOrders)
+  go elevAlgo.ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo, CostFuncToCom, NewOrderToCom)
+  go com(comToElevAlgo,elevAlgoToCom)
 
 	//done
 }
