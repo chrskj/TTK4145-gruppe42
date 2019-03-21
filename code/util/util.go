@@ -16,7 +16,7 @@ const ( //stor bokstav
 	EmergencyStop = 4
 )
 
-type Direction int
+type Direction int //for elevator IO use, not orders
 
 const (
 	DirDown Direction = iota - 1
@@ -32,8 +32,20 @@ type Elev struct {
 }
 
 type Order struct {
-	Dir   Direction //0 er ned og 1 er opp
-	Floor int
+	elevator  int
+	toFloor   int64
+	direction bool //True = opp, False = ned
+	timestamp uint64
+}
+
+type ChannelPacket struct {
+	packetType string
+	elevator   int
+	toFloor    int64
+	direction  bool
+	timestamp  uint64
+	cost       float64
+	dataJson   []byte
 }
 
 type button int
