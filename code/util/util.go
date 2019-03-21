@@ -28,7 +28,7 @@ type Elev struct {
 	State       FSM_state
 	Dir         Direction
 	Floor       int
-	OrdersQueue [NumFloors][NumOrderTypes]bool //int fordi lettere å utføre matematiske operasjoner senere.
+	OrdersQueue [NumFloors][NumOrderTypes]bool
 }
 
 type Order struct {
