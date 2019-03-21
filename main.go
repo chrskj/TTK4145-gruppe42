@@ -1,18 +1,21 @@
 import "./elevAlgo"
 import "fmt"
 
-type orderStruct struct {
-	int floor
-	int direction //0 er ned og 1 er opp
-} 
-
-type ChannelPacket struct{
-	packetType string
-	elevator int
-	toFloor int64
-	direction int64
+type Order struct {
+	elevator  int
+	toFloor   int64
+	direction bool
 	timestamp uint64
-	cost float64
+}
+
+type ChannelPacket struct {
+	packetType string
+	elevator   int
+	toFloor    int64
+	direction  bool //True = opp, false = ned
+	timestamp  uint64
+	cost       float64
+	dataJson   []byte
 }
 
 //Kanal orders -> komm (orders)
