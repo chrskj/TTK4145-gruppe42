@@ -55,7 +55,7 @@ func main() {
 	writeToFile()
 }
 
-func initialize(ordersToCom chan ChannelPacket, comToOrders chan ChannelPacket, ordersToElevAlgo chan ChannelPacket, elevAlgoToOrders chan ChannelPacket) {
+func Initialize(ordersToCom chan ChannelPacket, comToOrders chan ChannelPacket, ordersToElevAlgo chan ChannelPacket, elevAlgoToOrders chan ChannelPacket) {
 	ticker := time.NewTicker(100 * time.Millisecond)
 	go func() {
 		for {
@@ -63,10 +63,7 @@ func initialize(ordersToCom chan ChannelPacket, comToOrders chan ChannelPacket, 
 			tstamp++
 		}
 	}()
-	//data = readFile()
 	//try to get data from others
-
-	//get elevator ID
 
 	go orderRoutine(ordersToCom, comToOrders, ordersToElevAlgo, elevAlgoToOrders)
 }
@@ -77,24 +74,24 @@ func orderRoutine(ordersToCom chan ChannelPacket, comToOrders chan ChannelPacket
 		select {
 		case temp := <-comToOrders:
 			switch temp.packetType {
+			case "elevID":
+				thisElevator = temp.elevator
 			case "compareCost":
 				costChan <- temp
 			case "orderComplete":
-				toRemove := Order{
+				removeOrder(Order{
 					elevator:  temp.elevator,
 					toFloor:   temp.toFloor,
 					direction: temp.direction,
 					timestamp: temp.timestamp,
-				}
-				removeOrder(toRemove)
+				})
 			case "addOrder":
-				newOrder := Order{
+				addOrder(Order{
 					elevator:  temp.elevator,
 					toFloor:   temp.toFloor,
 					direction: temp.direction,
 					timestamp: temp.timestamp,
-				}
-				addOrder(newOrder)
+				})
 			case "getOrderList":
 				packet := ChannelPacket{
 					packetType: "orderList",
