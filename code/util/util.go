@@ -7,6 +7,7 @@ import (
 const (
 	NumFloors     = 4
 	NumOrderTypes = 3
+	NumElevators  = 3
 )
 
 type currentFloor int //stor bokstav
@@ -45,11 +46,11 @@ type Order struct {
 type ChannelPacket struct {
 	PacketType string
 	Elevator   int
-	Floor    int64
+	Floor      int64
 	Direction  bool
 	Timestamp  uint64
 	Cost       float64
-	DataJson   []byte
+	OrderList  []Order
 }
 
 type button int
