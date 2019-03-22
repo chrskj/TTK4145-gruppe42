@@ -1,22 +1,22 @@
 package util
 
 const (
-    numFloors       = 4
-    numOrderTypes   = 3
+	NumFloors     = 4
+	NumOrderTypes = 3
 )
 
-type currentFloor int
+type currentFloor int //stor bokstav
 type FSM_state int
 
-const (
-	initialize      = 0
-	idle            = 1
-	running         = 2
-	doorOpen        = 3
-	emergencyStop   = 4
+const ( //stor bokstav
+	Initialize    = 0
+	Idle          = 1
+	Running       = 2
+	DoorOpen      = 3
+	EmergencyStop = 4
 )
 
-type Direction int
+type Direction int //for elevator IO use, not orders
 
 const (
 	DirDown Direction = iota - 1
@@ -25,22 +25,33 @@ const (
 )
 
 type Elev struct {
-	State FSM_state
-	Dir Direction
-	Floor int
-	ordersQueue [numFloors][numOrderTypes]bool
+	State       FSM_state
+	Dir         Direction
+	Floor       int64
+	OrdersQueue [NumFloors][NumOrderTypes]bool
 }
 
-type order struct {
-	floor int
-	direction int //0 er ned og 1 er opp
+type Order struct {
+	Elevator  int
+	Floor     int64
+	Direction bool //True = opp, False = ned
+	Timestamp uint64
 }
 
-type ChannelPacket struct{
+type ChannelPacket struct {
 	packetType string
-	elevatorID int
-	toFloor int64
-	direction int64
-	timestamp uint64
-	cost float64
+	elevator   int
+	toFloor    int64
+	direction  bool
+	timestamp  uint64
+	cost       float64
+	dataJson   []byte
 }
+
+type button int
+
+const ( //stor bokstav
+	ButtonDown button = 0
+	ButtonCab         = 1
+	ButtonUp          = 2
+)
