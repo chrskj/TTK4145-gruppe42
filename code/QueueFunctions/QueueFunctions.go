@@ -6,11 +6,11 @@ import (
 
 //stor bokstav på ALT !!
 
-func CalculateCostFunction(elevator Elev, order Order) int {
-	var cost int
-	if order.Dir != elevator.Dir {
-		cost = cost + 2
-	}
+func CalculateCostFunction(elevator Elev, order Order) float64 {
+	var cost float64
+	//if order.Direction != elevator.Dir {
+	//	cost = cost + 2
+	//}
 	switch elevator.Dir {
 	case DirDown:
 		if order.Floor > elevator.Floor {

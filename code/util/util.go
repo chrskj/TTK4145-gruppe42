@@ -27,15 +27,15 @@ const (
 type Elev struct {
 	State       FSM_state
 	Dir         Direction
-	Floor       int
+	Floor       int64
 	OrdersQueue [NumFloors][NumOrderTypes]bool
 }
 
 type Order struct {
-	elevator  int
-	toFloor   int64
-	direction bool //True = opp, False = ned
-	timestamp uint64
+	Elevator  int
+	Floor   int64
+	Direction bool //True = opp, False = ned
+	Timestamp uint64
 }
 
 type ChannelPacket struct {
