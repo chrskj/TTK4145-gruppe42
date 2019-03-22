@@ -13,46 +13,65 @@ import (
 	"time"
 
 	//"math/rand"
-	//"strconv"
+	"strconv"
 	"../network/bcast"
 	"../network/peers"
 	. "../util"
 )
 
-type MessageStruct struct {
-	Message string
-	Iter    int
-}
-
-var sendMessage chan ChannelPacket
-
-func InitCom(toElevAlgo, toOrders, fromElevAlgo,
-	fromOrders chan ChannelPacket) {
-	id := fmt.Sprintf("%d", os.Getpid())
+func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket) {
+	id := os.Getpid()
+	sendMessage := make(chan ChannelPacket)
 	go bcast.Transmitter(16570, sendMessage)
+
 	receiveMessage := make(chan ChannelPacket)
 	go bcast.Receiver(16570, receiveMessage)
 
-	go SendHeartbeat(id)
+	go SendHeartbeat(strconv.Itoa(id))
 	go ReceiveHeartbeat()
-	fmt.Println("comm initialized")
+
+    idPacket := ChannelPacket{
+        PacketType:     "elevID"
+        Elevator:       id
+    }
+
+    toOrders <-idPacket
 
 	for {
 		select {
 		case temp := <-fromElevAlgo:
 			fmt.Println(temp)
-			go SendMessage(temp)
+            // Skal begge meldinger sendes over nettet? (cost & ordersComplete)
+            toOrders <-temp
+            SendMessage(temp)
 		case temp := <-fromOrders:
 			fmt.Println(temp)
-			go SendMessage(temp)
+            switch temp.PacketType {
+            case "requestCostFunction":
+                SendMessage(temp)
+                toElevAlgo <-temp
+            case "getOrderList":
+                // Hva må gjøres her?
+                SendMessage(temp)
+            case "newOrder":
+                // Hva må gjøres her?
+                SendMessage(temp)
+            case "orderList":
+                // Hva må gjøres her?
+                SendMessage(temp)
+            }
 		case temp := <-receiveMessage:
-			fmt.Printf("Recieved pakcet of type%s:\n", temp.PacketType)
+			fmt.Printf("Recieved packet of type%s:\n", temp.PacketType)
 			switch temp.PacketType {
 			case "newOrder":
 				toOrders <- temp
 			case "orderList":
 				toOrders <- temp
 			case "getOrderList":
+				toOrders <- temp
+			case "cost":
+				toOrders <- temp
+			case "orderComplete":
 				toOrders <- temp
 			case "requestCostFunction":
 				toElevAlgo <- temp
