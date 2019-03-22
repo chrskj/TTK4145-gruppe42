@@ -121,7 +121,7 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 					//SetButtonLamp(elevator.Dir, a, false)         //Turn of button lamp in the correct direction
 					if elevator.Dir == DirDown {
 						SetButtonLamp(BT_HallDown, a, false)
-					} else if elevation.Dir == DirUp {
+					} else if elevator.Dir == DirUp {
 						SetButtonLamp(BT_HallUp, a, false)
 					} else {
 
