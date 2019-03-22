@@ -16,11 +16,11 @@ import (
 
 func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 	ElevAlgoToCom chan ChannelPacket, elevPort string) {
+
 	ipString := "localhost:" + elevPort
 	Init(ipString, NumFloors)
 
-	var d MotorDirection = MD_Up
-	SetMotorDirection(d)
+	SetMotorDirection(MD_Up)
 
 	elevator := Elev{
 		State:       Idle,

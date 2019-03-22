@@ -46,7 +46,6 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo,
 			time.Sleep(1000 * time.Millisecond)
         }
     }
-    fmt.Println("comm initialized")
 }
 
 func SendHeartbeat(id string) {
