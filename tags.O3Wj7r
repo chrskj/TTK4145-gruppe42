@@ -1,0 +1,7 @@
+TTK4145-gruppe44	README.md	/^# TTK4145-gruppe44$/;"	c
+Todo	README.md	/^## Todo$/;"	s
+main	jsonExample.go	/^package main$/;"	p
+Person	jsonExample.go	/^type Person struct {$/;"	s	package:main
+Firstname	jsonExample.go	/^	Firstname, Lastname string$/;"	m	struct:main.Person	typeref:typename:string
+Lastname	jsonExample.go	/^	Firstname, Lastname string$/;"	m	struct:main.Person	typeref:typename:string
+main	jsonExample.go	/^func main() {$/;"	f	package:main
