@@ -28,7 +28,7 @@ import (
 var thisElevator int
 var costChan chan ChannelPacket
 var data []Order
-var localOrders []Order
+var localOrders [2][]Order
 
 func InitOrders(OrdersToCom, ComToOrders, OrdersToElevAlgo,
 	ElevAlgoToOrders chan ChannelPacket) {
@@ -184,32 +184,41 @@ func readFile() []Order {
 
 func writeToFile() {
 	fmt.Println("before write")
+	if len(localOrders>0){
+
 	file, err := os.Create("orders.csv")
 	checkError("Cannot create file", err)
 	defer file.Close()
 	writer := csv.NewWriter(file)
 	defer writer.Flush()
-	//var writeData []string
-	for i := 0; i < (len(data) / (NumElevators + 1)); i++ {
-		values := data[((NumElevators + 1) * i):((NumElevators+1)*i + (NumElevators + 1))]
-		var value []string
-		for j := 0; j < 3; j++ {
-			value = append(value, strconv.FormatInt(values[j].Floor, 10))
-			value = append(value, strconv.FormatBool(values[j].Direction))
-			value = append(value, strconv.FormatUint(values[j].Timestamp, 10))
+	var flag bool
+	if len(localOrders[0])>len(localOrders[1]){
+		flag = true
+	}
+	if flag{
+		for j := 0; j<len(localOrders[0]); j++ {
+			valueStr := string(val.Floor) + "," + string(val.Direction) + "," + string(val.Timestamp)
+			if j<len(localOrders[1]){
+			valueStr = valueStr + string(val.Floor) + "," + string(val.Direction) + "," + string(val.Timestamp)
+			}
+			err = writer.Write(valueStr)
+			checkError("Cannot write to file", err)
 		}
-		value = append(value, strconv.FormatInt(values[NumElevators].Floor, 10))
-		value = append(value, strconv.FormatUint(values[NumElevators].Timestamp, 10))
-		var valueStr []string
-		for j := 0; j < 3*NumElevators+1; j++ {
-			valueStr = append(valueStr, value[j]) // + ","
-		}
-		valueStr = append(valueStr, value[3*NumElevators])
-		valueStr = append(valueStr, value[3*NumElevators+1])
-		valueStr = valueStr[:len(valueStr)-1]
-		//writeData = append(writeData, valueStr)
-		err = writer.Write(valueStr)
-		checkError("Cannot write to file", err)
+	} else {
+		for j := 0; j<len(localOrders[1]); j++ {
+			if j<len(localOrders[0]){
+			valueStr := string(val.Floor) + "," + string(val.Direction) + "," + string(val.Timestamp)
+			} else {
+			valueStr := string(0) + "," + string(false) + "," + string(0)
+			}
+			valueStr = valueStr + string(val.Floor) + "," + string(val.Direction) + "," + string(val.Timestamp)
+			err = writer.Write(valueStr)
+			checkError("Cannot write to file", err)
+	}
+	}
+	}
+	} else {
+		fmt.Println("no local orders to write to file")
 	}
 	/*
 		err = writer.Write(writeData)
@@ -218,24 +227,8 @@ func writeToFile() {
 }
 
 func addOrder(newOrder Order) {
-	blankOrder := Order{
-		Elevator:  0,
-		Floor:     0,
-		Direction: false,
-		Timestamp: 0,
-	}
-	for index, value := range data {
-		if value.Timestamp == 0 && value.Elevator == newOrder.Elevator {
-			data[index] = newOrder
-			newOrder.Timestamp = 0
-		}
-	}
-	if newOrder.Timestamp != 0 {
 		data = append(data, newOrder)
 		for i := 0; i < NumElevators; i++ {
-			data = append(data, blankOrder)
-		}
-	}
 }
 
 func removeOrder(toRemove Order) []Order {
