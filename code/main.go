@@ -1,19 +1,23 @@
 package main
 
 import (
+  "fmt"
+	"./orders"
+	"./communication"
 	"./elevAlgo"
 	. "./util"
 )
 
 //comment
 
-func main() {
+func main(){
+  fmt.Println("Started")
 
-	//Kanal orders -> komm (orders)
-  OrdersToCom := make(chan struct ChannelPacket)
+  //Kanal orders -> komm (orders)
+  OrdersToCom := make(chan ChannelPacket)
 
   //Kanal komm -> orders (orders)
-  ComToOrders := make(chan struct ChannelPacket)
+  ComToOrders := make(chan ChannelPacket)
 
 
   //Kanal orders -> heisalgo (ønsket floor, direction)
@@ -22,13 +26,16 @@ func main() {
   ElevAlgoToOrders := make(chan ChannelPacket)
 
   //Kanal komm -> heisalgo (request om cost function)
-  ComToElevAlgo := make(chan orderStruct)
+  ComToElevAlgo := make(chan ChannelPacket)
   //Kanal heisalgo -> komm (cost function)
-  ElevAlgoToCom := make(chan orderStruct)
+  ElevAlgoToCom := make(chan ChannelPacket)
 
-  go orders.initialize(ordersToCom, comToOrders,ordersToElevAlgo,elevAlgoToOrders)
-  go elevAlgo.ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo, CostFuncToCom, NewOrderToCom)
-  go com(comToElevAlgo,elevAlgoToCom)
+  go orders.InitOrders(OrdersToCom, ComToOrders,OrdersToElevAlgo,ElevAlgoToOrders)
+  go elevAlgo.ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders,
+      ComToElevAlgo, ElevAlgoToCom)
+  go communication.InitCom(ComToElevAlgo, ComToOrders, ElevAlgoToCom, OrdersToCom)
+
+  for{}
 
 	//done
 }

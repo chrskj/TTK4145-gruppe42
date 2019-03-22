@@ -21,7 +21,7 @@ func CalculateCostFunction(elevator Elev, order Order) float64 {
 			cost = cost + 2
 		}
 	}
-	return QueueFuncCountOrders(elevator) + cost
+	return float64(QueueFuncCountOrders(elevator)) + cost
 }
 
 func QueueFuncCountOrders(elevator Elev) int {
@@ -64,7 +64,7 @@ func QueueFuncOrdersAboveInQueue(elevator Elev) bool {
 }
 
 func QueueFuncOrdersBelowInQueue(elevator Elev) bool {
-	for i := 0; i < elevator.Floor; i++ {
+	for i := int64(0); i < elevator.Floor; i++ {
 		for j := 0; j < NumOrderTypes; j++ {
 			if elevator.OrdersQueue[i][j] {
 				return true

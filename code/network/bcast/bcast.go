@@ -1,7 +1,7 @@
 package bcast
 
 import (
-	"github.com/chrskj/TTK4145-gruppe44/code/network/conn"
+	"../conn"
 	"encoding/json"
 	"fmt"
 	"net"

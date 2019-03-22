@@ -39,13 +39,13 @@ type Order struct {
 }
 
 type ChannelPacket struct {
-	packetType string
-	elevator   int
-	toFloor    int64
-	direction  bool
-	timestamp  uint64
-	cost       float64
-	dataJson   []byte
+	PacketType string
+	Elevator   int
+	Floor    int64
+	Direction  bool
+	Timestamp  uint64
+	Cost       float64
+	DataJson   []byte
 }
 
 type button int

@@ -22,7 +22,7 @@ import (
 	"os"
 	"strconv"
 	"time"
-	"../util"
+	. "../util"
 )
 
 var numElevators int = 3
@@ -30,36 +30,28 @@ var thisElevator int
 var costChan chan ChannelPacket
 var data []Order
 var tstamp uint64 = 1
-var ordersToCom chan ChannelPacket
-var comToOrders chan ChannelPacket
-var ordersToElevAlgo chan ChannelPacket
-var elevAlgoToOrders chan ChannelPacket
 
 
-func main() {
-	data = readFile()
-
-	writeToFile()
-}
-
-func Initialize(ordersToCom chan ChannelPacket, comToOrders chan ChannelPacket, ordersToElevAlgo chan ChannelPacket, elevAlgoToOrders chan ChannelPacket) {
+func InitOrders(OrdersToCom, ComToOrders, OrdersToElevAlgo,
+		ElevAlgoToOrders chan ChannelPacket) {
 	ticker := time.NewTicker(100 * time.Millisecond)
 	go func() {
 		for {
 			<-ticker.C
 			tstamp++
 		}
+		fmt.Println("orders initialized")
 	}()
 	//try to get data from others
 
-	go orderRoutine(ordersToCom, comToOrders, ordersToElevAlgo, elevAlgoToOrders)
+	go orderRoutine(OrdersToCom, ComToOrders, OrdersToElevAlgo, ElevAlgoToOrders)
 }
 
-func orderRoutine(ordersToCom chan ChannelPacket, comToOrders chan ChannelPacket, ordersToElevAlgo chan ChannelPacket, elevAlgoToOrders chan ChannelPacket) {
+func orderRoutine(OrdersToCom chan ChannelPacket, ComToOrders chan ChannelPacket, OrdersToElevAlgo chan ChannelPacket, ElevAlgoToOrders chan ChannelPacket) {
 	var costChan chan ChannelPacket
 	for {
 		select {
-		case temp := <-comToOrders:
+		case temp := <-ComToOrders:
 			switch temp.PacketType {
 			case "elevID":
 				thisElevator = temp.Elevator
@@ -84,11 +76,11 @@ func orderRoutine(ordersToCom chan ChannelPacket, comToOrders chan ChannelPacket
 					PacketType: "orderList",
 					DataJson:   getOrderJson(),
 				}
-				ordersToCom <- packet
+				OrdersToCom <- packet
 			case "orderJson":
 				json.Unmarshal(temp.DataJson, data)
 			}
-		case temp := <-elevAlgoToOrders:
+		case temp := <-ElevAlgoToOrders:
 			switch temp.PacketType {
 			case "buttonPress":
 				newOrder := Order{
@@ -106,15 +98,15 @@ func orderRoutine(ordersToCom chan ChannelPacket, comToOrders chan ChannelPacket
 				}
 				//if not: start the cost compare
 				if newOrder.Timestamp > 0 {
-					go costCompare(newOrder, ordersToCom)
+					go costCompare(newOrder, OrdersToElevAlgo, OrdersToCom)
 				}
 			}
 		}
 	}
 }
 
-func costCompare(newOrder Order, ordersToCom chan ChannelPacket) {
-	ordersToCom <- ChannelPacket{
+func costCompare(newOrder Order, OrdersToElevAlgo, OrdersToCom chan ChannelPacket) {
+	OrdersToCom <- ChannelPacket{
 		PacketType: "requestCostFunc",
 		Elevator:   thisElevator,
 	}
@@ -140,24 +132,24 @@ func costCompare(newOrder Order, ordersToCom chan ChannelPacket) {
 	}
 	max := 9999.0
 	for _, val := range costs {
-		if val.cost < max {
-			max = val.cost
+		if val.Cost < max {
+			max = val.Cost
 			newOrder.Elevator = val.Elevator
 		}
 	}
 	if newOrder.Elevator != -1 {
 		data = addOrder(newOrder)
 		temp := ChannelPacket{
-			PacketType: "newOrder"
-			Elevator: newOrder.Elevator
-			Floor:	newOrder.Floor
-			Direction:	newOrder.Direction
-			Timestamp: newOrder.Timestamp
+			PacketType: "newOrder",
+			Elevator: newOrder.Elevator,
+			Floor:	newOrder.Floor,
+			Direction:	newOrder.Direction,
+			Timestamp: newOrder.Timestamp,
 		}
 		if temp.Elevator == thisElevator {
-			ordersToElevAlgo <- temp
+			OrdersToElevAlgo <- temp
 		} else {
-			ordersToCom <- temp
+			OrdersToCom <- temp
 		}
 	} else {
 		//error, no costs received

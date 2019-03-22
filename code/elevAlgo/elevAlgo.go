@@ -14,11 +14,17 @@ import (
 	w "../watchdog"
 )
 
-func ElevStateMachine(OrdersToElevAlgo chan Order, ElevAlgoToOrders chan Order, ComToElevAlgo chan Order, CostFuncToCom chan int, NewOrderToCom chan Order) {
+func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
+		ElevAlgoToCom chan ChannelPacket) {	
+	Init("localhost:15657", NumFloors)
+
+
+    var d MotorDirection = MD_Up
+	SetMotorDirection(d)
+	
 	elevator := Elev{
 		State:       Idle,
 		Dir:         DirStop,
-		Floor:       2, //Hvordan sette denne?
 		OrdersQueue: [NumFloors][NumOrderTypes]bool{},
 	}
 	var aTemp int
@@ -48,28 +54,32 @@ func ElevStateMachine(OrdersToElevAlgo chan Order, ElevAlgoToOrders chan Order, 
 		select {
 
 		case a := <-OrdersToElevAlgo: //recieves a new ordre from orders
-			if a.Dir == 1 {
+			if a.Direction {
 				elevator.OrdersQueue[a.Floor][ButtonUp] = true
-			} else if a.Dir == 0 {
+			} else{
 				elevator.OrdersQueue[a.Floor][ButtonDown] = true
-			} else {
-				fmt.Printf("Something fishy in the orders from Orders, not 0 or 1!")
 			}
 
 		case a := <-ComToElevAlgo:
-			CostFuncToCom <- CalculateCostFunction(elevator, a)
+			packet := ChannelPacket{
+				PacketType: "cost",
+				Cost: CalculateCostFunction(elevator, Order{
+					Elevator : a.Elevator,
+					Floor: a.Floor,
+					Direction: a.Direction}),
+			}
+			ElevAlgoToCom <- packet
 
 		case a := <-drv_buttons:
 			//This will go straight to orders, unless its a cab call!
-			NewOrder := Order{
-				Floor: a.Floor,
-				Dir:   0,
+			NewOrder := ChannelPacket{
+				Floor: int64(a.Floor),
 			}
 			if a.Button == BT_HallUp {
-				NewOrder.Dir = 1
+				NewOrder.Direction = true
 				ElevAlgoToOrders <- NewOrder
 			} else if a.Button == BT_HallDown {
-				NewOrder.Dir = 0
+				NewOrder.Direction = false
 				ElevAlgoToOrders <- NewOrder
 			} else {
 				elevator.OrdersQueue[a.Floor][ButtonCab] = true
@@ -78,7 +88,7 @@ func ElevStateMachine(OrdersToElevAlgo chan Order, ElevAlgoToOrders chan Order, 
 		case a := <-drv_floors:
 			if aTemp != a {
 				fmt.Printf("We are on floor nr. %+v\n", a)
-				elevator.Floor = a
+				elevator.Floor = int64(a)
 				//elevAlgoToOrders <- a //Sends the current floor to orders
 				if QueueFuncShouldStop(elevator) {
 					SetMotorDirection(MD_Stop)

@@ -13,9 +13,9 @@ import (
 	"time"
 	//"math/rand"
     //"strconv"
-    "github.com/chrskj/TTK4145-gruppe44/code/network/bcast"
-    "github.com/chrskj/TTK4145-gruppe44/code/network/peers"
-    . "github.com/chrskj/TTK4145-gruppe44/code/util"
+    "../network/bcast"
+    "../network/peers"
+    . "../util"
 )
 
 type MessageStruct struct {
@@ -23,7 +23,7 @@ type MessageStruct struct {
 	Iter    int
 }
 
-func Initialize(toElevAlgo, toOrders, fromElevAlgo,
+func InitCom(toElevAlgo, toOrders, fromElevAlgo,
         fromOrders chan ChannelPacket) {
     id := fmt.Sprintf("%d", os.Getpid())
 
@@ -46,6 +46,7 @@ func Initialize(toElevAlgo, toOrders, fromElevAlgo,
 			time.Sleep(1000 * time.Millisecond)
         }
     }
+    fmt.Println("comm initialized")
 }
 
 func SendHeartbeat(id string) {

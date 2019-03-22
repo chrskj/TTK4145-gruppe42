@@ -1,7 +1,7 @@
 package peers
 
 import (
-    "github.com/chrskj/TTK4145-gruppe44/code/network/conn"
+    "../conn"
 	"fmt"
 	"net"
 	"sort"
