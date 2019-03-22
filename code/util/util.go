@@ -35,17 +35,10 @@ type Elev struct {
 	OrdersQueue [NumFloors][NumOrderTypes]bool
 }
 
-type Order struct {
-	Elevator  int
-	Floor     int64
-	Direction bool //True = opp, False = ned
-	Timestamp uint64
-}
-
 type ChannelPacket struct {
 	PacketType string
 	Elevator   int
-	Floor    int64
+	Floor      int64
 	Direction  bool
 	Timestamp  uint64
 	Cost       float64

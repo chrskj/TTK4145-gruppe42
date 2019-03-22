@@ -127,8 +127,13 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 					} else {
 
 					}
-
-					//notify orders that its done!
+					packet := ChannelPacket{
+						PacketType: "OrderComplete",
+						Floor: elevator.Floor,
+						Direction: elevator.Dir,
+						Timestamp: time.Now()
+					}
+					ElevAlgoToCom <- packet //Notifying that order is complete
 					doorTimer.Reset(3 * time.Second) //begin 3 seconds of waiting for people to enter and leave car
 					SetDoorOpenLamp(true)
 					elevator.State = DoorOpen
@@ -149,6 +154,15 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 			SetMotorDirection(MD_Stop)
 			//si ifra om emergency stop
 
+			//Lage en pakke her!
+			packet := ChannelPacket{
+				PacketType: "EmergencyStop",
+				Floor: elevator.Floor,
+				Direction: elevator.Dir,
+				Timestamp: time.Now()
+			}
+			ElevAlgoToOrders <- packet
+
 		case <-engineWatchDog.TimeOverChannel():
 			fmt.Printf("Engine has timed out. Entering emergency stop mode .\n")
 			drv_stop <- true
@@ -157,7 +171,6 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 			fmt.Printf("Entering doorTimer\n")
 			SetDoorOpenLamp(false)
 			elevator.Dir = QueueFuncChooseDirection(elevator)
-			//SetMotorDirection(elevator.Dir)
 			if elevator.Dir == DirDown {
 				SetMotorDirection(MD_Down)
 				elevator.State = Running
