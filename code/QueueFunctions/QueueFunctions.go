@@ -40,11 +40,13 @@ func QueueFuncCountOrders(elevator Elev) int {
 func QueueFuncShouldStop(elevator Elev) bool {
 	switch elevator.Dir {
 	case DirDown:
-		return elevator.OrdersQueue[elevator.Floor][ButtonCab] ||
+		return (elevator.OrdersQueue[elevator.Floor][ButtonCab] ||
 			elevator.OrdersQueue[elevator.Floor][ButtonDown] ||
-			!QueueFuncOrdersBelowInQueue(elevator)
+			!QueueFuncOrdersBelowInQueue(elevator))
 	case DirUp:
-		return elevator.OrdersQueue[elevator.Floor][ButtonCab] || elevator.OrdersQueue[elevator.Floor][ButtonUp] || !QueueFuncOrdersAboveInQueue(elevator)
+		return (elevator.OrdersQueue[elevator.Floor][ButtonCab] || 
+			elevator.OrdersQueue[elevator.Floor][ButtonUp] || 
+			!QueueFuncOrdersAboveInQueue(elevator))
 	default:
 
 	}

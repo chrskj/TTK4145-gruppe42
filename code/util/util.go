@@ -1,5 +1,9 @@
 package util
 
+import (
+	"fmt"
+)
+
 const (
 	NumFloors     = 4
 	NumOrderTypes = 3
@@ -55,3 +59,28 @@ const ( //stor bokstav
 	ButtonCab         = 1
 	ButtonUp          = 2
 )
+
+func ElevatorPrinter(elev Elev) {
+	switch elev.State {
+	case 0:
+		fmt.Printf("Initialize\t")
+	case 1:
+		fmt.Printf("Idle\t")
+	case 2:
+		fmt.Printf("Running\t")
+	case 3:
+		fmt.Printf("DoorOpen\t")
+	case 4:
+		fmt.Printf("EmergencyStop\t")
+	}
+	switch elev.Dir {
+	case -1:
+		fmt.Printf("Going down...\t")
+	case 0:
+		fmt.Printf("Standing still...\t")
+	case 1:
+		fmt.Printf("Going up...\t")
+	}
+	fmt.Printf("On floor %d\n", elev.Floor)
+	fmt.Printf("%t\n", elev.OrdersQueue)
+}
