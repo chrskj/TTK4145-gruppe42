@@ -15,13 +15,13 @@ import (
 )
 
 func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
-		ElevAlgoToCom chan ChannelPacket) {	
-	Init("localhost:15657", NumFloors)
-
+        ElevAlgoToCom chan ChannelPacket, elevPort string) {
+            ipString := "localhost:" + elevPort
+	Init(ipString, NumFloors)
 
     var d MotorDirection = MD_Up
 	SetMotorDirection(d)
-	
+
 	elevator := Elev{
 		State:       Idle,
 		Dir:         DirUp,
