@@ -98,3 +98,4 @@ a = 3
 	}
 }
 TESTLINE
+TESTLINE2
