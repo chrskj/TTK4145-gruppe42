@@ -2,7 +2,7 @@
 //spawne phoenix backup
 //execute elevator
 //calculate cost function
-//
+//comment
 package elevAlgo
 
 import "./elevio"
@@ -97,3 +97,4 @@ a = 3
 		}
 	}
 }
+TESTLINE
