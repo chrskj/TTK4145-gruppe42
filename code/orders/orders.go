@@ -9,6 +9,8 @@
 //sende ut alle orders den har til komm
 
 //ta imot alle andres ordre fra komm, og vurdere hva som er nye ordre, og hva som er ferdige ordre (og da slette)
+
+//comment
 package orders
 
 import (
