@@ -284,5 +284,6 @@ func removeOrder(toRemove Order) []Order {
 func checkError(message string, err error) {
 	if err != nil {
 		log.Fatal(message, err)
+        TESTLINE
 	}
 }
