@@ -1,5 +1,4 @@
 //spawne phoenix backup
-//Slukke lys når starter (unødvendig?)
 //fikse den watchdogen
 package elevAlgo
 
@@ -22,8 +21,6 @@ func InitElev(elevPort string){
 			SetButtonLamp(BT_HallUp, i, false)
 			fmt.Printf(" %d ", i)
 			}
-		
-		
 }
 
 func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
@@ -104,11 +101,11 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 					elevator.Dir = QueueFuncChooseDirection(elevator)
 					if elevator.Dir == DirDown {
 						SetMotorDirection(MD_Down)
-						//engineWatchDog.Reset()
+						engineWatchDog.Reset()
 						elevator.State = Running
 					} else if elevator.Dir == DirUp {
 						SetMotorDirection(MD_Up)
-						//engineWatchDog.Reset()
+						engineWatchDog.Reset()
 						elevator.State = Running
 					} else {
 						fmt.Printf("Dafuq?")
@@ -118,7 +115,7 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 
 		case a := <-drv_floors:
 			fmt.Printf("Entering drv_floors\n")
-			//engineWatchDog.Reset()
+			engineWatchDog.Reset()
 			if aTemp != a {
 				SetFloorIndicator(a)
 				fmt.Printf("We are on floor nr. %+v\n", a)
@@ -131,8 +128,7 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 					elevator.OrdersQueue[a][ButtonCab] = false    //erases cab order from queue
 					elevator.OrdersQueue[a][elevator.Dir] = false //erases order in correct direction
 					SetButtonLamp(BT_Cab, a, false)               //Turn of button lamp in cab
-					//SetButtonLamp(elevator.Dir, a, false)         //Turn of button lamp in the correct direction
-					if elevator.Dir == DirDown {
+					if elevator.Dir == DirDown { //Turn of button lamp in the correct direction
 						SetButtonLamp(BT_HallDown, a, false)
 					} else if elevator.Dir == DirUp {
 						SetButtonLamp(BT_HallUp, a, false)
