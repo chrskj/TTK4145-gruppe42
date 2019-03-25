@@ -43,7 +43,7 @@ type ChannelPacket struct {
 	Direction  bool
 	Timestamp  uint64
 	Cost       float64
-	OrderList  []Order
+	OrderList  []ChannelPacket
 }
 
 type button int

@@ -27,8 +27,8 @@ import (
 
 var thisElevator int
 var costChan chan ChannelPacket
-var data []Order
-var localOrders [2][]Order
+var data []ChannelPacket
+var localOrders [2][]ChannelPacket
 
 func InitOrders(OrdersToCom, ComToOrders, OrdersToElevAlgo,
 	ElevAlgoToOrders chan ChannelPacket) {
@@ -48,14 +48,14 @@ func orderRoutine(OrdersToCom chan ChannelPacket, ComToOrders chan ChannelPacket
 			case "cost":
 				costChan <- temp
 			case "orderComplete":
-				removeOrder(Order{
+				removeOrder(ChannelPacket{
 					Elevator:  temp.Elevator,
 					Floor:     temp.Floor,
 					Direction: temp.Direction,
 					Timestamp: temp.Timestamp,
 				})
 			case "newOrder":
-				addOrder(Order{
+				addOrder(ChannelPacket{
 					Elevator:  temp.Elevator,
 					Floor:     temp.Floor,
 					Direction: temp.Direction,
@@ -73,7 +73,7 @@ func orderRoutine(OrdersToCom chan ChannelPacket, ComToOrders chan ChannelPacket
 		case temp := <-ElevAlgoToOrders:
 			switch temp.PacketType {
 			case "buttonPress":
-				newOrder := Order{
+				newOrder := ChannelPacket{
 					Elevator:  -1,
 					Floor:     temp.Floor,
 					Direction: temp.Direction,
@@ -95,7 +95,7 @@ func orderRoutine(OrdersToCom chan ChannelPacket, ComToOrders chan ChannelPacket
 	}
 }
 
-func costCompare(newOrder Order, OrdersToElevAlgo, OrdersToCom chan ChannelPacket) {
+func costCompare(newOrder ChannelPacket, OrdersToElevAlgo, OrdersToCom chan ChannelPacket) {
 	OrdersToCom <- ChannelPacket{
 		PacketType: "requestCostFunc",
 		Elevator:   thisElevator,
@@ -128,14 +128,8 @@ func costCompare(newOrder Order, OrdersToElevAlgo, OrdersToCom chan ChannelPacke
 		}
 	}
 	if newOrder.Elevator != -1 {
-		data = addOrder(newOrder)
-		temp := ChannelPacket{
-			PacketType: "newOrder",
-			Elevator:   newOrder.Elevator,
-			Floor:      newOrder.Floor,
-			Direction:  newOrder.Direction,
-			Timestamp:  newOrder.Timestamp,
-		}
+		addOrder(newOrder)
+		temp := newOrder
 		if temp.Elevator == thisElevator {
 			OrdersToElevAlgo <- temp
 		} else {
@@ -146,8 +140,7 @@ func costCompare(newOrder Order, OrdersToElevAlgo, OrdersToCom chan ChannelPacke
 	}
 }
 
-func readFile() []Order {
-	var data []Order
+func readFile() {
 	file, err := os.Open("orders.csv")
 	checkError("Cannot create file", err)
 	defer file.Close()
@@ -159,88 +152,80 @@ func readFile() []Order {
 		if error == io.EOF {
 			break
 		}
-		for i := 0; i < NumElevators; i++ {
-			FloorTemp, _ := strconv.ParseInt(input[0+3*i], 10, 64)
-			DirectionTemp, _ := strconv.ParseBool(input[1+3*i])
-			tstampTemp, _ := strconv.ParseUint(input[2+3*i], 10, 64)
-			ElevatorTemp := i + 1
-			data = append(data, Order{
-				Elevator:  ElevatorTemp,
+		FloorTemp, _ := strconv.ParseInt(input[0], 10, 64)
+		DirectionTemp, _ := strconv.ParseBool(input[1])
+		TimestampTemp, _ := strconv.ParseUint(input[2], 10, 64)
+		localOrders[0] = append(localOrders[0], ChannelPacket{
+			Elevator:  thisElevator,
+			Floor:     FloorTemp,
+			Direction: DirectionTemp,
+			Timestamp: TimestampTemp,
+		})
+		if len(input) > 3 {
+			FloorTemp, _ := strconv.ParseInt(input[3], 10, 64)
+			DirectionTemp, _ := strconv.ParseBool(input[4])
+			TimestampTemp, _ := strconv.ParseUint(input[5], 10, 64)
+			localOrders[1] = append(localOrders[1], ChannelPacket{
+				Elevator:  0,
 				Floor:     FloorTemp,
 				Direction: DirectionTemp,
-				Timestamp: tstampTemp,
+				Timestamp: TimestampTemp,
 			})
 		}
-		FloorTemp, _ := strconv.ParseInt(input[3*NumElevators], 10, 64)
-		tstampTemp, _ := strconv.ParseUint(input[3*NumElevators+1], 10, 64)
-		data = append(data, Order{
-			Elevator:  0,
-			Floor:     FloorTemp,
-			Timestamp: tstampTemp,
-		})
 	}
-	return data
 }
 
 func writeToFile() {
 	fmt.Println("before write")
-	if len(localOrders>0){
+	if len(localOrders) > 0 {
 
-	file, err := os.Create("orders.csv")
-	checkError("Cannot create file", err)
-	defer file.Close()
-	writer := csv.NewWriter(file)
-	defer writer.Flush()
-	var flag bool
-	if len(localOrders[0])>len(localOrders[1]){
-		flag = true
-	}
-	if flag{
-		for j := 0; j<len(localOrders[0]); j++ {
-			valueStr := string(val.Floor) + "," + string(val.Direction) + "," + string(val.Timestamp)
-			if j<len(localOrders[1]){
-			valueStr = valueStr + string(val.Floor) + "," + string(val.Direction) + "," + string(val.Timestamp)
-			}
-			err = writer.Write(valueStr)
-			checkError("Cannot write to file", err)
+		file, err := os.Create("orders.csv")
+		checkError("Cannot create file", err)
+		defer file.Close()
+		writer := csv.NewWriter(file)
+		defer writer.Flush()
+		length := len(localOrders[0])
+		if len(localOrders[1]) > length {
+			length = len(localOrders[1])
 		}
-	} else {
-		for j := 0; j<len(localOrders[1]); j++ {
-			if j<len(localOrders[0]){
-			valueStr := string(val.Floor) + "," + string(val.Direction) + "," + string(val.Timestamp)
+		var valueStr []string
+		for j := 0; j < length; j++ {
+			if j < len(localOrders[0]) {
+				valueStr = append(valueStr, strconv.FormatInt(localOrders[0][j].Floor, 10)+","+strconv.FormatBool(localOrders[0][j].Direction)+",")
+				valueStr[j] = valueStr[j] + strconv.FormatUint(localOrders[0][j].Timestamp, 10)
 			} else {
-			valueStr := string(0) + "," + string(false) + "," + string(0)
+				valueStr = append(valueStr, "0,false,0")
 			}
-			valueStr = valueStr + string(val.Floor) + "," + string(val.Direction) + "," + string(val.Timestamp)
-			err = writer.Write(valueStr)
-			checkError("Cannot write to file", err)
-	}
-	}
-	}
-	} else {
-		fmt.Println("no local orders to write to file")
-	}
-	/*
-		err = writer.Write(writeData)
+			if j < len(localOrders[1]) {
+				valueStr[j] = valueStr[j] + "," + strconv.FormatInt(localOrders[1][j].Floor, 10) + "," + strconv.FormatBool(localOrders[1][j].Direction) + ","
+				valueStr[j] = valueStr[j] + strconv.FormatUint(localOrders[1][j].Timestamp, 10)
+			}
+		}
+		err = writer.Write(valueStr)
 		checkError("Cannot write to file", err)
-	*/
-}
-
-func addOrder(newOrder Order) {
-		data = append(data, newOrder)
-		for i := 0; i < NumElevators; i++ {
-}
-
-func removeOrder(toRemove Order) []Order {
-	blankOrder := Order{
-		Elevator:  0,
-		Floor:     0,
-		Direction: false,
-		Timestamp: 0,
 	}
+}
+
+func addOrder(newOrder ChannelPacket) {
+	data = append(data, newOrder)
+	if newOrder.Elevator == thisElevator {
+		localOrders[0] = append(localOrders[0], newOrder)
+	} else if newOrder.Elevator == 0 {
+		localOrders[1] = append(localOrders[1], newOrder)
+	}
+}
+
+func removeOrder(toRemove ChannelPacket) []ChannelPacket {
 	for index, value := range data {
-		if value == toRemove {
-			data[index] = blankOrder
+		if value.Timestamp == toRemove.Timestamp {
+			data = append(data[:index-1], data[index+1:]...)
+		}
+	}
+	if toRemove.Elevator == thisElevator || toRemove.Elevator == 0 {
+		for index, value := range data {
+			if value.Timestamp == toRemove.Timestamp {
+				data = append(data[:index-1], data[index+1:]...)
+			}
 		}
 	}
 	return data

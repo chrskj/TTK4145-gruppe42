@@ -15,13 +15,12 @@ import (
 )
 
 func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
-		ElevAlgoToCom chan ChannelPacket) {	
+	ElevAlgoToCom chan ChannelPacket) {
 	Init("localhost:15657", NumFloors)
 
-
-    var d MotorDirection = MD_Up
+	var d MotorDirection = MD_Up
 	SetMotorDirection(d)
-	
+
 	elevator := Elev{
 		State:       Idle,
 		Dir:         DirUp,
@@ -57,7 +56,7 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 			fmt.Printf("Entering OrdersToElevAlgo\n")
 			if a.Direction {
 				elevator.OrdersQueue[a.Floor][ButtonUp] = true
-			} else{
+			} else {
 				elevator.OrdersQueue[a.Floor][ButtonDown] = true
 			}
 
@@ -65,9 +64,9 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 			fmt.Printf("Entering ComToElevAlgo\n")
 			packet := ChannelPacket{
 				PacketType: "cost",
-				Cost: CalculateCostFunction(elevator, Order{
-					Elevator : a.Elevator,
-					Floor: a.Floor,
+				Cost: CalculateCostFunction(elevator, ChannelPacket{
+					Elevator:  a.Elevator,
+					Floor:     a.Floor,
 					Direction: a.Direction}),
 			}
 			ElevAlgoToCom <- packet
@@ -77,9 +76,9 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 			//This will go straight to orders, unless its a cab call!
 			NewOrder := ChannelPacket{
 				PacketType: "buttonPress",
-				Floor: int64(a.Floor),
+				Floor:      int64(a.Floor),
 			}
-			fmt.Printf("%d\n",a.Button)
+			fmt.Printf("%d\n", a.Button)
 			if a.Button == BT_HallUp {
 				NewOrder.Direction = true
 				ElevAlgoToOrders <- NewOrder
@@ -89,18 +88,18 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 			} else {
 				fmt.Printf("Why the hell did I end up here?")
 				elevator.OrdersQueue[a.Floor][ButtonCab] = true
-				if elevator.State == Idle{
+				if elevator.State == Idle {
 					elevator.Dir = QueueFuncChooseDirection(elevator)
 					elevator.State = Running
-					if elevator.Dir ==DirDown {
+					if elevator.Dir == DirDown {
 						SetMotorDirection(MD_Down)
-					}else if elevator.Dir == DirUp{
+					} else if elevator.Dir == DirUp {
 						SetMotorDirection(MD_Up)
-					}else {
+					} else {
 						fmt.Printf("Dafuq?")
 					}
 				}
-				
+
 			}
 
 		case a := <-drv_floors:
