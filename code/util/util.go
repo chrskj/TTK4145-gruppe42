@@ -8,7 +8,6 @@ const (
 	NumElevators  = 3
 	NumFloors     = 4
 	NumOrderTypes = 3
-	NumElevators  = 3
 )
 
 type currentFloor int //stor bokstav
@@ -22,17 +21,17 @@ const ( //stor bokstav
 	EmergencyStop = 4
 )
 
-type Direction int //for elevator IO use, not orders
+type ElevDir int //for elevator IO use, not orders
 
 const (
-	DirDown Direction = iota - 1
+	DirDown ElevDir = iota - 1
 	DirStop
 	DirUp
 )
 
 type Elev struct {
 	State       FSM_state
-	Dir         Direction
+	Dir         ElevDir
 	Floor       int64
 	OrdersQueue [NumFloors][NumOrderTypes]bool
 }
@@ -56,6 +55,7 @@ const ( //stor bokstav
 )
 
 func ElevatorPrinter(elev Elev) {
+    fmt.Printf("State: ")
 	switch elev.State {
 	case 0:
 		fmt.Printf("Initialize\t")
@@ -68,6 +68,7 @@ func ElevatorPrinter(elev Elev) {
 	case 4:
 		fmt.Printf("EmergencyStop\t")
 	}
+    fmt.Printf("| Current Direction: ")
 	switch elev.Dir {
 	case -1:
 		fmt.Printf("Going down...\t")
@@ -76,11 +77,18 @@ func ElevatorPrinter(elev Elev) {
 	case 1:
 		fmt.Printf("Going up...\t")
 	}
-	fmt.Printf("On floor %d\n", elev.Floor)
-	fmt.Printf("%t\n", elev.OrdersQueue)
+    fmt.Printf("| Floor: %d\n", elev.Floor)
+	//fmt.Printf("%t\n", elev.OrdersQueue)
+    for i := 0; i < len(elev.OrdersQueue); i++ {
+        for j := 0; j < len(elev.OrdersQueue[0]); j++ {
+            fmt.Printf("%t\t", elev.OrdersQueue[i][j])
+        }
+        fmt.Printf("\n")
+    }
+    fmt.Printf("==========================================================\n")
 }
 
-func DirBoolToInt(direction bool) Direction {
+func DirBoolToInt(direction bool) ElevDir {
 	if direction {
 		return DirUp
 	} else {
@@ -88,7 +96,7 @@ func DirBoolToInt(direction bool) Direction {
 	}
 }
 
-func DirIntToBool(direction Direction) bool {
+func DirIntToBool(direction ElevDir) bool {
 	if direction == DirDown {
 		return false
 	} else if direction == DirUp {

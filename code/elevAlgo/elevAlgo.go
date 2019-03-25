@@ -26,7 +26,7 @@ func InitElev(elevPort string) {
 }
 
 func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
-	ElevAlgoToCom chan ChannelPacket, elevPort string) {
+        ElevAlgoToCom chan ChannelPacket, elevPort string) {
 	InitElev(elevPort)
 	SetMotorDirection(MD_Up)
 
@@ -145,7 +145,11 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 						Timestamp:  uint64(time.Now().UnixNano()),
 					}
 					ElevAlgoToCom <- packet          //Notifying that order is complete
-					doorTimer.Reset(3 * time.Second) //begin 3 seconds of waiting for people to enter and leave car
+                    //go func() {
+                    //    msg := <-ElevAlgoToCom
+                    //    fmt.Printf("%s", msg)
+                    //}()
+                    doorTimer.Reset(3 * time.Second) //begin 3 seconds of waiting for people to enter and leave car
 					SetDoorOpenLamp(true)
 					elevator.State = DoorOpen
 				}

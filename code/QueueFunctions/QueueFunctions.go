@@ -76,7 +76,7 @@ func QueueFuncOrdersBelowInQueue(elevator Elev) bool {
 	return false
 }
 
-func QueueFuncChooseDirection(elevator Elev) Direction {
+func QueueFuncChooseDirection(elevator Elev) ElevDir{
 	switch elevator.Dir {
 	case DirStop:
 		if QueueFuncOrdersAboveInQueue(elevator) {

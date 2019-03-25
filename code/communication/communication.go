@@ -20,10 +20,10 @@ import (
 	. "../util"
 )
 
-var sendMessage chan ChannelPacket
-
 func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket) {
 	id := os.Getpid()
+
+	sendMessage := make(chan ChannelPacket)
 	go bcast.Transmitter(16570, sendMessage)
 
 	receiveMessage := make(chan ChannelPacket)
@@ -37,56 +37,52 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket) 
 		Elevator:   id,
 	}
 
-	toOrders <- idPacket
+	toOrders <-idPacket
 
 	for {
 		select {
 		case temp := <-fromElevAlgo:
-			fmt.Println(temp)
+			fmt.Printf("Received packet of type %s from elevAlgo:\n", temp.PacketType)
 			// Skal begge meldinger sendes over nettet? (cost & ordersComplete)
-			toOrders <- temp
-			SendMessage(temp)
+            sendMessage <-temp
+			toOrders <-temp
 		case temp := <-fromOrders:
 			fmt.Println(temp)
 			switch temp.PacketType {
 			case "requestCostFunction":
-				SendMessage(temp)
-				toElevAlgo <- temp
+                sendMessage <-temp
+				toElevAlgo <-temp
 			case "getOrderList":
 				// Hva må gjøres her?
-				SendMessage(temp)
+                sendMessage <-temp
 			case "newOrder":
 				// Hva må gjøres her?
-				SendMessage(temp)
+                sendMessage <-temp
 			case "orderList":
 				// Hva må gjøres her?
-				SendMessage(temp)
+                sendMessage <-temp
 			}
 		case temp := <-receiveMessage:
-			fmt.Printf("Recieved packet of type%s:\n", temp.PacketType)
+			fmt.Printf("Received packet of type %s from the net:\n", temp.PacketType)
 			switch temp.PacketType {
 			case "newOrder":
-				toOrders <- temp
+				toOrders <-temp
 			case "orderList":
-				toOrders <- temp
+				toOrders <-temp
 			case "getOrderList":
-				toOrders <- temp
+				toOrders <-temp
 			case "cost":
-				toOrders <- temp
+				toOrders <-temp
 			case "orderComplete":
-				toOrders <- temp
+				toOrders <-temp
 			case "requestCostFunction":
-				toElevAlgo <- temp
+				toElevAlgo <-temp
 			}
 		default:
 			fmt.Println("    .")
 			time.Sleep(1000 * time.Millisecond)
 		}
 	}
-}
-
-func SendMessage(temp ChannelPacket) {
-	sendMessage <- temp
 }
 
 func SendHeartbeat(id string) {
