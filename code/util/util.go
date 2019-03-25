@@ -8,7 +8,6 @@ const (
 	NumElevators  = 3
 	NumFloors     = 4
 	NumOrderTypes = 3
-	NumElevators  = 3
 )
 
 type currentFloor int //stor bokstav

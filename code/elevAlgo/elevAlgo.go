@@ -12,7 +12,6 @@ import (
 	w "../watchdog"
 )
 
-<<<<<<< HEAD
 func InitElev(elevPort string){
 	ipString := "localhost:" + elevPort
 	Init(ipString, NumFloors)
@@ -28,14 +27,6 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 	ElevAlgoToCom chan ChannelPacket, elevPort string) {
 	InitElev(elevPort)
 	SetMotorDirection(MD_Up)
-=======
-func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
-	ElevAlgoToCom chan ChannelPacket) {
-	Init("localhost:15657", NumFloors)
-
-	var d MotorDirection = MD_Up
-	SetMotorDirection(d)
->>>>>>> windows_struggles
 
 	elevator := Elev{
 		State:       Idle,
@@ -44,7 +35,7 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 	}
 	var aTemp int = -1
 	//Start watchdogs
-	engineWatchDog := w.New(time.Second)
+	engineWatchDog := w.New(3*time.Second)
 	engineWatchDog.Reset()
 	engineWatchDog.Stop()
 
@@ -72,10 +63,7 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 			fmt.Printf("Enteng OrdersToElevAlgo\n")
 			if a.Direction {
 				elevator.OrdersQueue[a.Floor][ButtonUp] = true
-<<<<<<< HEAD
 				SetButtonLamp(BT_HallUp, int(a.Floor), true)
-=======
->>>>>>> windows_struggles
 			} else {
 				elevator.OrdersQueue[a.Floor][ButtonDown] = true
 				SetButtonLamp(BT_HallDown, int(a.Floor), true)
@@ -108,48 +96,34 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 				ElevAlgoToOrders <- NewOrder
 			} else {
 				elevator.OrdersQueue[a.Floor][ButtonCab] = true
-<<<<<<< HEAD
 				SetButtonLamp(a.Button, a.Floor, true)
 				if elevator.State == Idle {
 					elevator.Dir = QueueFuncChooseDirection(elevator)
 					if elevator.Dir == DirDown {
 						SetMotorDirection(MD_Down)
-						engineWatchDog.Reset()
+						//engineWatchDog.Reset()
 						elevator.State = Running
 					} else if elevator.Dir == DirUp {
 						SetMotorDirection(MD_Up)
-						engineWatchDog.Reset()
+						//engineWatchDog.Reset()
 						elevator.State = Running
-=======
-				if elevator.State == Idle {
-					elevator.Dir = QueueFuncChooseDirection(elevator)
-					elevator.State = Running
-					if elevator.Dir == DirDown {
-						SetMotorDirection(MD_Down)
-					} else if elevator.Dir == DirUp {
-						SetMotorDirection(MD_Up)
->>>>>>> windows_struggles
 					} else {
 						fmt.Printf("Dafuq?")
 					}
 				}
-<<<<<<< HEAD
-=======
-
->>>>>>> windows_struggles
 			}
 
 		case a := <-drv_floors:
 			fmt.Printf("Entering drv_floors\n")
-			engineWatchDog.Reset()
 			if aTemp != a {
+				//engineWatchDog.Reset()
 				SetFloorIndicator(a)
 				fmt.Printf("We are on floor nr. %+v\n", a)
 				elevator.Floor = int64(a)
 				//elevAlgoToOrders <- a //Sends the current floor to orders
 				if QueueFuncShouldStop(elevator) {
 					SetMotorDirection(MD_Stop)
-					engineWatchDog.Stop()
+					//engineWatchDog.Stop()
 					elevator.Dir = DirStop
 					elevator.OrdersQueue[a][ButtonCab] = false    //erases cab order from queue
 					elevator.OrdersQueue[a][elevator.Dir] = false //erases order in correct direction
@@ -215,7 +189,7 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 				elevator.State = Running
 			} else { //elevator.Dir == DirStop
 				elevator.State = Idle
-				engineWatchDog.Stop()
+				//engineWatchDog.Stop()
 			}
 		}
 	}
