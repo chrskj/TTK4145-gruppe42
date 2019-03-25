@@ -11,41 +11,82 @@ import (
 	"fmt"
 	"os"
 	"time"
+
 	//"math/rand"
-    //"strconv"
-    "../network/bcast"
-    "../network/peers"
-    . "../util"
+	"strconv"
+
+	"../network/bcast"
+	"../network/peers"
+	. "../util"
 )
 
-type MessageStruct struct {
-	Message string
-	Iter    int
+var sendMessage chan ChannelPacket
+
+func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket) {
+	id := os.Getpid()
+	go bcast.Transmitter(16570, sendMessage)
+
+	receiveMessage := make(chan ChannelPacket)
+	go bcast.Receiver(16570, receiveMessage)
+
+	go SendHeartbeat(strconv.Itoa(id))
+	go ReceiveHeartbeat()
+
+	idPacket := ChannelPacket{
+		PacketType: "elevID",
+		Elevator:   id,
+	}
+
+	toOrders <- idPacket
+
+	for {
+		select {
+		case temp := <-fromElevAlgo:
+			fmt.Println(temp)
+			// Skal begge meldinger sendes over nettet? (cost & ordersComplete)
+			toOrders <- temp
+			SendMessage(temp)
+		case temp := <-fromOrders:
+			fmt.Println(temp)
+			switch temp.PacketType {
+			case "requestCostFunction":
+				SendMessage(temp)
+				toElevAlgo <- temp
+			case "getOrderList":
+				// Hva må gjøres her?
+				SendMessage(temp)
+			case "newOrder":
+				// Hva må gjøres her?
+				SendMessage(temp)
+			case "orderList":
+				// Hva må gjøres her?
+				SendMessage(temp)
+			}
+		case temp := <-receiveMessage:
+			fmt.Printf("Recieved packet of type%s:\n", temp.PacketType)
+			switch temp.PacketType {
+			case "newOrder":
+				toOrders <- temp
+			case "orderList":
+				toOrders <- temp
+			case "getOrderList":
+				toOrders <- temp
+			case "cost":
+				toOrders <- temp
+			case "orderComplete":
+				toOrders <- temp
+			case "requestCostFunction":
+				toElevAlgo <- temp
+			}
+		default:
+			fmt.Println("    .")
+			time.Sleep(1000 * time.Millisecond)
+		}
+	}
 }
 
-func InitCom(toElevAlgo, toOrders, fromElevAlgo,
-        fromOrders chan ChannelPacket) {
-    id := fmt.Sprintf("%d", os.Getpid())
-
-    go SendHeartbeat(id)
-    go ReceiveHeartbeat()
-    go ReceiveMessage()
-
-    for {
-        select {
-        case temp := <-fromElevAlgo:
-            fmt.Println(temp)
-        case temp := <-fromOrders:
-            fmt.Println(temp)
-        case temp := <-toElevAlgo:
-            fmt.Println(temp)
-        case temp := <-toOrders:
-            fmt.Println(temp)
-        default:
-            fmt.Println("    .")
-			time.Sleep(1000 * time.Millisecond)
-        }
-    }
+func SendMessage(temp ChannelPacket) {
+	sendMessage <- temp
 }
 
 func SendHeartbeat(id string) {
@@ -64,28 +105,5 @@ func ReceiveHeartbeat() {
 			fmt.Printf("  New:      %q\n", p.New)
 			fmt.Printf("  Lost:     %q\n", p.Lost)
 		}
-    }
-}
-
-func ReceiveMessage() {
-    receiveMessage := make(chan MessageStruct)
-    go bcast.Receiver(16570, receiveMessage)
-    for {
-        select {
-        case a := <-receiveMessage:
-            fmt.Printf("Received: %v\n", a)
-        }
-    }
-}
-
-func SendMessage(id string) {
-	sendMessage := make(chan MessageStruct)
-	go bcast.Transmitter(16570, sendMessage)
-
-    helloMsg := MessageStruct{"Hello from " + id, 0}
-    for {
-        helloMsg.Iter++
-        sendMessage <- helloMsg
-        time.Sleep(1 * time.Second)
-    }
+	}
 }

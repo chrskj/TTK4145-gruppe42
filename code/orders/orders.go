@@ -129,13 +129,7 @@ func costCompare(newOrder ChannelPacket, OrdersToElevAlgo, OrdersToCom chan Chan
 	}
 	if newOrder.Elevator != -1 {
 		addOrder(newOrder)
-		temp := ChannelPacket{
-			PacketType: "newOrder",
-			Elevator:   newOrder.Elevator,
-			Floor:      newOrder.Floor,
-			Direction:  newOrder.Direction,
-			Timestamp:  newOrder.Timestamp,
-		}
+		temp := newOrder
 		if temp.Elevator == thisElevator {
 			OrdersToElevAlgo <- temp
 		} else {
@@ -146,8 +140,7 @@ func costCompare(newOrder ChannelPacket, OrdersToElevAlgo, OrdersToCom chan Chan
 	}
 }
 
-func readFile() []ChannelPacket {
-	var data []ChannelPacket
+func readFile() {
 	file, err := os.Open("orders.csv")
 	checkError("Cannot create file", err)
 	defer file.Close()
@@ -159,46 +152,82 @@ func readFile() []ChannelPacket {
 		if error == io.EOF {
 			break
 		}
-		for i := 0; i < NumElevators; i++ {
-			FloorTemp, _ := strconv.ParseInt(input[0+3*i], 10, 64)
-			DirectionTemp, _ := strconv.ParseBool(input[1+3*i])
-			tstampTemp, _ := strconv.ParseUint(input[2+3*i], 10, 64)
-			ElevatorTemp := i + 1
-			data = append(data, ChannelPacket{
-				Elevator:  ElevatorTemp,
+		FloorTemp, _ := strconv.ParseInt(input[0], 10, 64)
+		DirectionTemp, _ := strconv.ParseBool(input[1])
+		TimestampTemp, _ := strconv.ParseUint(input[2], 10, 64)
+		localOrders[0] = append(localOrders[0], ChannelPacket{
+			Elevator:  thisElevator,
+			Floor:     FloorTemp,
+			Direction: DirectionTemp,
+			Timestamp: TimestampTemp,
+		})
+		if len(input) > 3 {
+			FloorTemp, _ := strconv.ParseInt(input[3], 10, 64)
+			DirectionTemp, _ := strconv.ParseBool(input[4])
+			TimestampTemp, _ := strconv.ParseUint(input[5], 10, 64)
+			localOrders[1] = append(localOrders[1], ChannelPacket{
+				Elevator:  0,
 				Floor:     FloorTemp,
 				Direction: DirectionTemp,
-				Timestamp: tstampTemp,
+				Timestamp: TimestampTemp,
 			})
 		}
-		FloorTemp, _ := strconv.ParseInt(input[3*NumElevators], 10, 64)
-		tstampTemp, _ := strconv.ParseUint(input[3*NumElevators+1], 10, 64)
-		data = append(data, ChannelPacket{
-			Elevator:  0,
-			Floor:     FloorTemp,
-			Timestamp: tstampTemp,
-		})
 	}
-	return data
 }
 
 func writeToFile() {
-	
-	} 
-	/*
-		err = writer.Write(writeData)
-		checkError("Cannot write to file", err)
-	*/
+	fmt.Println("before write")
+	if len(localOrders) > 0 {
 
+		file, err := os.Create("orders.csv")
+		checkError("Cannot create file", err)
+		defer file.Close()
+		writer := csv.NewWriter(file)
+		defer writer.Flush()
+		length := len(localOrders[0])
+		if len(localOrders[1]) > length {
+			length = len(localOrders[1])
+		}
+		var valueStr []string
+		for j := 0; j < length; j++ {
+			if j < len(localOrders[0]) {
+				valueStr = append(valueStr, strconv.FormatInt(localOrders[0][j].Floor, 10)+","+strconv.FormatBool(localOrders[0][j].Direction)+",")
+				valueStr[j] = valueStr[j] + strconv.FormatUint(localOrders[0][j].Timestamp, 10)
+			} else {
+				valueStr = append(valueStr, "0,false,0")
+			}
+			if j < len(localOrders[1]) {
+				valueStr[j] = valueStr[j] + "," + strconv.FormatInt(localOrders[1][j].Floor, 10) + "," + strconv.FormatBool(localOrders[1][j].Direction) + ","
+				valueStr[j] = valueStr[j] + strconv.FormatUint(localOrders[1][j].Timestamp, 10)
+			}
+		}
+		err = writer.Write(valueStr)
+		checkError("Cannot write to file", err)
+	}
+}
 
 func addOrder(newOrder ChannelPacket) {
-		data = append(data, newOrder)
-		for i := 0; i < NumElevators; i++ {
-}
+	data = append(data, newOrder)
+	if newOrder.Elevator == thisElevator {
+		localOrders[0] = append(localOrders[0], newOrder)
+	} else if newOrder.Elevator == 0 {
+		localOrders[1] = append(localOrders[1], newOrder)
+	}
 }
 
 func removeOrder(toRemove ChannelPacket) []ChannelPacket {
-
+	for index, value := range data {
+		if value.Timestamp == toRemove.Timestamp {
+			data = append(data[:index-1], data[index+1:]...)
+		}
+	}
+	if toRemove.Elevator == thisElevator || toRemove.Elevator == 0 {
+		for index, value := range data {
+			if value.Timestamp == toRemove.Timestamp {
+				data = append(data[:index-1], data[index+1:]...)
+			}
+		}
+	}
 	return data
 }
 
