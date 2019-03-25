@@ -1,5 +1,8 @@
 //spawne phoenix backup
 //fikse den watchdogen
+
+//Hvis i strømmen går, må den rette seg opp hvis den ser en etasje igjen
+
 package elevAlgo
 
 import (
@@ -73,7 +76,7 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 		case a := <-ComToElevAlgo:
 			fmt.Printf("Entering ComToElevAlgo\n")
 			packet := ChannelPacket{
-				PacketType: "cost",
+				PacketType: "cost",//Hvis man bestiller til samme etasje, går den opp og ned.
 				Cost: CalculateCostFunction(elevator, ChannelPacket{
 					Elevator:  a.Elevator,
 					Floor:     a.Floor,
@@ -96,17 +99,20 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 				NewOrder.Direction = false
 				ElevAlgoToOrders <- NewOrder
 			} else {
-				elevator.OrdersQueue[a.Floor][ButtonCab] = true
-				SetButtonLamp(a.Button, a.Floor, true)
+				if a.Floor != int(elevator.Floor){
+					elevator.OrdersQueue[a.Floor][ButtonCab] = true
+					SetButtonLamp(a.Button, a.Floor, true)
+				}
+				
 				if elevator.State == Idle {
 					elevator.Dir = QueueFuncChooseDirection(elevator)
 					if elevator.Dir == DirDown {
 						SetMotorDirection(MD_Down)
-						//engineWatchDog.Reset()
+						engineWatchDog.Reset()
 						elevator.State = Running
 					} else if elevator.Dir == DirUp {
 						SetMotorDirection(MD_Up)
-						//engineWatchDog.Reset()
+						engineWatchDog.Reset()
 						elevator.State = Running
 					} else {
 						fmt.Printf("Dafuq?")
@@ -117,18 +123,22 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 		case a := <-drv_floors:
 			fmt.Printf("Entering drv_floors\n")
 			if aTemp != a {
-				//engineWatchDog.Reset()
+				engineWatchDog.Reset()
 				SetFloorIndicator(a)
 				fmt.Printf("We are on floor nr. %+v\n", a)
 				elevator.Floor = int64(a)
+				
 				//elevAlgoToOrders <- a //Sends the current floor to orders
 				if QueueFuncShouldStop(elevator) {
 					SetMotorDirection(MD_Stop)
-					//engineWatchDog.Stop()
+					engineWatchDog.Stop()
+					
 					elevator.Dir = DirStop
 					elevator.OrdersQueue[a][ButtonCab] = false    //erases cab order from queue
 					elevator.OrdersQueue[a][elevator.Dir] = false //erases order in correct direction
 					SetButtonLamp(BT_Cab, a, false)               //Turn of button lamp in cab
+					
+
 					if elevator.Dir == DirDown { //Turn of button lamp in the correct direction
 						SetButtonLamp(BT_HallDown, a, false)
 					} else if elevator.Dir == DirUp {
@@ -136,16 +146,20 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 					} else {
 
 					}
-					packet := ChannelPacket{
+					
+					/*packet := ChannelPacket{
 						PacketType: "OrderComplete",
 						Floor:      elevator.Floor,
 						Direction:  DirIntToBool(elevator.Dir),
 						Timestamp:  uint64(time.Now().UnixNano()),
-					}
-					ElevAlgoToCom <- packet          //Notifying that order is complete
+					}*/
+					
+					//ElevAlgoToCom <- packet          //Notifying that order is complete
+					fmt.Println("Kommer vi hit?")
 					doorTimer.Reset(3 * time.Second) //begin 3 seconds of waiting for people to enter and leave car
 					SetDoorOpenLamp(true)
 					elevator.State = DoorOpen
+					
 				}
 			}
 			aTemp = a
@@ -164,17 +178,17 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 			//si ifra om emergency stop
 
 			//Lage en pakke her!
-			packet := ChannelPacket{
+			/*packet := ChannelPacket{
 				PacketType: "EmergencyStop",
 				Floor:      elevator.Floor,
 				Direction:  DirIntToBool(elevator.Dir),
 				Timestamp:  uint64(time.Now().UnixNano()),
 			}
-			ElevAlgoToOrders <- packet
+			ElevAlgoToOrders <- packet*/
 
 		case <-engineWatchDog.TimeOverChannel():
 			fmt.Printf("Engine has timed out. Entering emergency stop mode .\n")
-			drv_stop <- true
+			//drv_stop <- true
 
 		case <-doorTimer.C:
 			fmt.Printf("Entering doorTimer\n")
@@ -182,15 +196,15 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 			elevator.Dir = QueueFuncChooseDirection(elevator)
 			if elevator.Dir == DirDown {
 				SetMotorDirection(MD_Down)
-				//engineWatchDog.Reset()
+				engineWatchDog.Reset()
 				elevator.State = Running
 			} else if elevator.Dir == DirUp {
 				SetMotorDirection(MD_Up)
-				//engineWatchDog.Reset()
+				engineWatchDog.Reset()
 				elevator.State = Running
 			} else { //elevator.Dir == DirStop
 				elevator.State = Idle
-				//engineWatchDog.Stop()
+				engineWatchDog.Stop()
 			}
 		}
 	}
