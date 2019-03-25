@@ -5,6 +5,7 @@ import (
 )
 
 const (
+	NumElevators  = 3
 	NumFloors     = 4
 	NumOrderTypes = 3
 	NumElevators  = 3
@@ -36,13 +37,6 @@ type Elev struct {
 	OrdersQueue [NumFloors][NumOrderTypes]bool
 }
 
-type Order struct {
-	Elevator  int
-	Floor     int64
-	Direction bool //True = opp, False = ned
-	Timestamp uint64
-}
-
 type ChannelPacket struct {
 	PacketType string
 	Elevator   int
@@ -50,7 +44,7 @@ type ChannelPacket struct {
 	Direction  bool
 	Timestamp  uint64
 	Cost       float64
-	OrderList  []Order
+	OrderList  []ChannelPacket
 }
 
 type button int
@@ -84,4 +78,23 @@ func ElevatorPrinter(elev Elev) {
 	}
 	fmt.Printf("On floor %d\n", elev.Floor)
 	fmt.Printf("%t\n", elev.OrdersQueue)
+}
+
+func DirBoolToInt(direction bool) Direction {
+	if direction {
+		return DirUp
+	} else {
+		return DirDown
+	}
+}
+
+func DirIntToBool(direction Direction) bool {
+	if direction == DirDown {
+		return false
+	} else if direction == DirUp {
+		return true
+	} else {
+		fmt.Printf("Error: DirStop cannot be converted to bool\n")
+		return false
+	}
 }

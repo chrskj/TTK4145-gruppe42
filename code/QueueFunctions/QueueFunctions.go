@@ -6,7 +6,7 @@ import (
 
 //stor bokstav på ALT !!
 
-func CalculateCostFunction(elevator Elev, order Order) float64 {
+func CalculateCostFunction(elevator Elev, order ChannelPacket) float64 {
 	var cost float64
 	//if order.Direction != elevator.Dir {
 	//	cost = cost + 2

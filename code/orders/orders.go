@@ -27,8 +27,8 @@ import (
 
 var thisElevator int
 var costChan chan ChannelPacket
-var data []Order
-var localOrders []Order
+var data []ChannelPacket
+var localOrders [2][]ChannelPacket
 
 func InitOrders(OrdersToCom, ComToOrders, OrdersToElevAlgo,
 	ElevAlgoToOrders chan ChannelPacket) {
@@ -48,14 +48,14 @@ func orderRoutine(OrdersToCom chan ChannelPacket, ComToOrders chan ChannelPacket
 			case "cost":
 				costChan <- temp
 			case "orderComplete":
-				removeOrder(Order{
+				removeOrder(ChannelPacket{
 					Elevator:  temp.Elevator,
 					Floor:     temp.Floor,
 					Direction: temp.Direction,
 					Timestamp: temp.Timestamp,
 				})
 			case "newOrder":
-				addOrder(Order{
+				addOrder(ChannelPacket{
 					Elevator:  temp.Elevator,
 					Floor:     temp.Floor,
 					Direction: temp.Direction,
@@ -73,7 +73,7 @@ func orderRoutine(OrdersToCom chan ChannelPacket, ComToOrders chan ChannelPacket
 		case temp := <-ElevAlgoToOrders:
 			switch temp.PacketType {
 			case "buttonPress":
-				newOrder := Order{
+				newOrder := ChannelPacket{
 					Elevator:  -1,
 					Floor:     temp.Floor,
 					Direction: temp.Direction,
@@ -95,7 +95,7 @@ func orderRoutine(OrdersToCom chan ChannelPacket, ComToOrders chan ChannelPacket
 	}
 }
 
-func costCompare(newOrder Order, OrdersToElevAlgo, OrdersToCom chan ChannelPacket) {
+func costCompare(newOrder ChannelPacket, OrdersToElevAlgo, OrdersToCom chan ChannelPacket) {
 	OrdersToCom <- ChannelPacket{
 		PacketType: "requestCostFunc",
 		Elevator:   thisElevator,
@@ -128,7 +128,7 @@ func costCompare(newOrder Order, OrdersToElevAlgo, OrdersToCom chan ChannelPacke
 		}
 	}
 	if newOrder.Elevator != -1 {
-		data = addOrder(newOrder)
+		addOrder(newOrder)
 		temp := ChannelPacket{
 			PacketType: "newOrder",
 			Elevator:   newOrder.Elevator,
@@ -146,8 +146,8 @@ func costCompare(newOrder Order, OrdersToElevAlgo, OrdersToCom chan ChannelPacke
 	}
 }
 
-func readFile() []Order {
-	var data []Order
+func readFile() []ChannelPacket {
+	var data []ChannelPacket
 	file, err := os.Open("orders.csv")
 	checkError("Cannot create file", err)
 	defer file.Close()
@@ -164,7 +164,7 @@ func readFile() []Order {
 			DirectionTemp, _ := strconv.ParseBool(input[1+3*i])
 			tstampTemp, _ := strconv.ParseUint(input[2+3*i], 10, 64)
 			ElevatorTemp := i + 1
-			data = append(data, Order{
+			data = append(data, ChannelPacket{
 				Elevator:  ElevatorTemp,
 				Floor:     FloorTemp,
 				Direction: DirectionTemp,
@@ -173,7 +173,7 @@ func readFile() []Order {
 		}
 		FloorTemp, _ := strconv.ParseInt(input[3*NumElevators], 10, 64)
 		tstampTemp, _ := strconv.ParseUint(input[3*NumElevators+1], 10, 64)
-		data = append(data, Order{
+		data = append(data, ChannelPacket{
 			Elevator:  0,
 			Floor:     FloorTemp,
 			Timestamp: tstampTemp,
@@ -215,7 +215,6 @@ func writeToFile() {
 		err = writer.Write(writeData)
 		checkError("Cannot write to file", err)
 	*/
-}
 
 func addOrder(newOrder Order) {
 	blankOrder := Order{
