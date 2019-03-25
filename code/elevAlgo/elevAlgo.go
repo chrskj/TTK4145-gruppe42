@@ -12,15 +12,16 @@ import (
 	w "../watchdog"
 )
 
-func InitElev(elevPort string){
+func InitElev(elevPort string) {
 	ipString := "localhost:" + elevPort
 	Init(ipString, NumFloors)
-	for i:= 0; i<NumFloors;i++{ //Turn of all the lights in case they are still on
-			SetButtonLamp(BT_Cab, i, false)
-			SetButtonLamp(BT_HallDown, i, false)
-			SetButtonLamp(BT_HallUp, i, false)
-			fmt.Printf(" %d ", i)
-			}
+	for i := 0; i < NumFloors; i++ { //Turn of all the lights in case they are still on
+		SetButtonLamp(BT_Cab, i, false)
+		SetButtonLamp(BT_HallDown, i, false)
+		SetButtonLamp(BT_HallUp, i, false)
+		fmt.Printf(" %d ", i)
+	}
+
 }
 
 func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
@@ -79,7 +80,7 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 					Direction: a.Direction}),
 			}
 			ElevAlgoToCom <- packet
-			
+
 		case a := <-drv_buttons:
 			fmt.Printf("Entering drv_buttons\n")
 			//This will go straight to orders, unless its a cab call!
@@ -137,11 +138,11 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 					}
 					packet := ChannelPacket{
 						PacketType: "OrderComplete",
-						Floor: elevator.Floor,
-						Direction: DirIntToBool(elevator.Dir),
-						Timestamp: uint64(time.Now().UnixNano()),
+						Floor:      elevator.Floor,
+						Direction:  DirIntToBool(elevator.Dir),
+						Timestamp:  uint64(time.Now().UnixNano()),
 					}
-					ElevAlgoToCom <- packet //Notifying that order is complete
+					ElevAlgoToCom <- packet          //Notifying that order is complete
 					doorTimer.Reset(3 * time.Second) //begin 3 seconds of waiting for people to enter and leave car
 					SetDoorOpenLamp(true)
 					elevator.State = DoorOpen
@@ -165,9 +166,9 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 			//Lage en pakke her!
 			packet := ChannelPacket{
 				PacketType: "EmergencyStop",
-				Floor: elevator.Floor,
-				Direction: DirIntToBool(elevator.Dir),
-				Timestamp: uint64(time.Now().UnixNano()),
+				Floor:      elevator.Floor,
+				Direction:  DirIntToBool(elevator.Dir),
+				Timestamp:  uint64(time.Now().UnixNano()),
 			}
 			ElevAlgoToOrders <- packet
 
