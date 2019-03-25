@@ -67,7 +67,7 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 			fmt.Printf("Entering ComToElevAlgo\n")
 			packet := ChannelPacket{
 				PacketType: "cost",
-				Cost: CalculateCostFunction(elevator, Order{
+				Cost: CalculateCostFunction(elevator, ChannelPacket{
 					Elevator:  a.Elevator,
 					Floor:     a.Floor,
 					Direction: a.Direction}),
@@ -130,8 +130,8 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 					packet := ChannelPacket{
 						PacketType: "OrderComplete",
 						Floor: elevator.Floor,
-						Direction: elevator.Dir,
-						Timestamp: time.Now()
+						Direction: DirIntToBool(elevator.Dir),
+						Timestamp: uint64(time.Now().UnixNano()),
 					}
 					ElevAlgoToCom <- packet //Notifying that order is complete
 					doorTimer.Reset(3 * time.Second) //begin 3 seconds of waiting for people to enter and leave car
@@ -158,8 +158,8 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 			packet := ChannelPacket{
 				PacketType: "EmergencyStop",
 				Floor: elevator.Floor,
-				Direction: elevator.Dir,
-				Timestamp: time.Now()
+				Direction: DirIntToBool(elevator.Dir),
+				Timestamp: uint64(time.Now().UnixNano()),
 			}
 			ElevAlgoToOrders <- packet
 

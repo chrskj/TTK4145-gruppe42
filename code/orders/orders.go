@@ -15,33 +15,23 @@ package orders
 
 import (
 	"encoding/csv"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"os"
 	"strconv"
 	"time"
+
 	. "../util"
 )
 
-var numElevators int = 3
 var thisElevator int
 var costChan chan ChannelPacket
-var data []Order
-var tstamp uint64 = 1
-
+var data []ChannelPacket
+var localOrders [2][]ChannelPacket
 
 func InitOrders(OrdersToCom, ComToOrders, OrdersToElevAlgo,
-		ElevAlgoToOrders chan ChannelPacket) {
-	ticker := time.NewTicker(100 * time.Millisecond)
-	go func() {
-		for {
-			<-ticker.C
-			tstamp++
-		}
-		fmt.Println("orders initialized")
-	}()
+	ElevAlgoToOrders chan ChannelPacket) {
 	//try to get data from others
 
 	go orderRoutine(OrdersToCom, ComToOrders, OrdersToElevAlgo, ElevAlgoToOrders)
@@ -55,39 +45,39 @@ func orderRoutine(OrdersToCom chan ChannelPacket, ComToOrders chan ChannelPacket
 			switch temp.PacketType {
 			case "elevID":
 				thisElevator = temp.Elevator
-			case "compareCost":
+			case "cost":
 				costChan <- temp
 			case "orderComplete":
-				removeOrder(Order{
+				removeOrder(ChannelPacket{
 					Elevator:  temp.Elevator,
-					Floor:   temp.Floor,
+					Floor:     temp.Floor,
 					Direction: temp.Direction,
 					Timestamp: temp.Timestamp,
 				})
-			case "addOrder":
-				addOrder(Order{
+			case "newOrder":
+				addOrder(ChannelPacket{
 					Elevator:  temp.Elevator,
-					Floor:   temp.Floor,
+					Floor:     temp.Floor,
 					Direction: temp.Direction,
 					Timestamp: temp.Timestamp,
 				})
 			case "getOrderList":
 				packet := ChannelPacket{
 					PacketType: "orderList",
-					DataJson:   getOrderJson(),
+					OrderList:  data,
 				}
 				OrdersToCom <- packet
-			case "orderJson":
-				json.Unmarshal(temp.DataJson, data)
+			case "orderList":
+				data = temp.OrderList
 			}
 		case temp := <-ElevAlgoToOrders:
 			switch temp.PacketType {
 			case "buttonPress":
-				newOrder := Order{
+				newOrder := ChannelPacket{
 					Elevator:  -1,
-					Floor:   temp.Floor,
+					Floor:     temp.Floor,
 					Direction: temp.Direction,
-					Timestamp: tstamp,
+					Timestamp: uint64(time.Now().UnixNano()),
 				}
 				//check if order already exists
 				for _, value := range data {
@@ -105,7 +95,7 @@ func orderRoutine(OrdersToCom chan ChannelPacket, ComToOrders chan ChannelPacket
 	}
 }
 
-func costCompare(newOrder Order, OrdersToElevAlgo, OrdersToCom chan ChannelPacket) {
+func costCompare(newOrder ChannelPacket, OrdersToElevAlgo, OrdersToCom chan ChannelPacket) {
 	OrdersToCom <- ChannelPacket{
 		PacketType: "requestCostFunc",
 		Elevator:   thisElevator,
@@ -113,7 +103,7 @@ func costCompare(newOrder Order, OrdersToElevAlgo, OrdersToCom chan ChannelPacke
 	costTicker := time.NewTicker(10 * time.Millisecond)
 	var ticks uint = 0
 	var costs []ChannelPacket
-	for recievedOrders := 0; recievedOrders < numElevators && ticks < 200; {
+	for recievedOrders := 0; recievedOrders < NumElevators && ticks < 200; {
 		select {
 		case temp := <-costChan:
 			unique := true
@@ -138,13 +128,13 @@ func costCompare(newOrder Order, OrdersToElevAlgo, OrdersToCom chan ChannelPacke
 		}
 	}
 	if newOrder.Elevator != -1 {
-		data = addOrder(newOrder)
+		addOrder(newOrder)
 		temp := ChannelPacket{
 			PacketType: "newOrder",
-			Elevator: newOrder.Elevator,
-			Floor:	newOrder.Floor,
-			Direction:	newOrder.Direction,
-			Timestamp: newOrder.Timestamp,
+			Elevator:   newOrder.Elevator,
+			Floor:      newOrder.Floor,
+			Direction:  newOrder.Direction,
+			Timestamp:  newOrder.Timestamp,
 		}
 		if temp.Elevator == thisElevator {
 			OrdersToElevAlgo <- temp
@@ -156,8 +146,8 @@ func costCompare(newOrder Order, OrdersToElevAlgo, OrdersToCom chan ChannelPacke
 	}
 }
 
-func readFile() []Order {
-	var data []Order
+func readFile() []ChannelPacket {
+	var data []ChannelPacket
 	file, err := os.Open("orders.csv")
 	checkError("Cannot create file", err)
 	defer file.Close()
@@ -169,109 +159,46 @@ func readFile() []Order {
 		if error == io.EOF {
 			break
 		}
-		for i := 0; i < numElevators; i++ {
+		for i := 0; i < NumElevators; i++ {
 			FloorTemp, _ := strconv.ParseInt(input[0+3*i], 10, 64)
 			DirectionTemp, _ := strconv.ParseBool(input[1+3*i])
 			tstampTemp, _ := strconv.ParseUint(input[2+3*i], 10, 64)
 			ElevatorTemp := i + 1
-			data = append(data, Order{
+			data = append(data, ChannelPacket{
 				Elevator:  ElevatorTemp,
-				Floor:   FloorTemp,
+				Floor:     FloorTemp,
 				Direction: DirectionTemp,
 				Timestamp: tstampTemp,
 			})
 		}
-		FloorTemp, _ := strconv.ParseInt(input[3*numElevators], 10, 64)
-		tstampTemp, _ := strconv.ParseUint(input[3*numElevators+1], 10, 64)
-		data = append(data, Order{
+		FloorTemp, _ := strconv.ParseInt(input[3*NumElevators], 10, 64)
+		tstampTemp, _ := strconv.ParseUint(input[3*NumElevators+1], 10, 64)
+		data = append(data, ChannelPacket{
 			Elevator:  0,
-			Floor:   FloorTemp,
+			Floor:     FloorTemp,
 			Timestamp: tstampTemp,
 		})
 	}
 	return data
 }
 
-func getOrderJson() []byte {
-	var temp []Order
-	for i := 0; i < len(data)/4; i++ {
-		for j := 0; j < 3; j++ {
-			temp = append(temp, data[i])
-		}
-	}
-	valueJson, _ := json.Marshal(temp)
-	return valueJson
-}
-
 func writeToFile() {
-	fmt.Println("before write")
-	file, err := os.Create("orders.csv")
-	checkError("Cannot create file", err)
-	defer file.Close()
-	writer := csv.NewWriter(file)
-	defer writer.Flush()
-	//var writeData []string
-	for i := 0; i < (len(data) / (numElevators + 1)); i++ {
-		values := data[((numElevators + 1) * i):((numElevators+1)*i + (numElevators + 1))]
-		var value []string
-		for j := 0; j < 3; j++ {
-			value = append(value, strconv.FormatInt(values[j].Floor, 10))
-			value = append(value, strconv.FormatBool(values[j].Direction))
-			value = append(value, strconv.FormatUint(values[j].Timestamp, 10))
-		}
-		value = append(value, strconv.FormatInt(values[numElevators].Floor, 10))
-		value = append(value, strconv.FormatUint(values[numElevators].Timestamp, 10))
-		var valueStr []string
-		for j := 0; j < 3*numElevators+1; j++ {
-			valueStr = append(valueStr, value[j]) // + ","
-		}
-		valueStr = append(valueStr, value[3*numElevators])
-		valueStr = append(valueStr, value[3*numElevators+1])
-		valueStr = valueStr[:len(valueStr)-1]
-		//writeData = append(writeData, valueStr)
-		err = writer.Write(valueStr)
-		checkError("Cannot write to file", err)
-	}
+	
+	} 
 	/*
 		err = writer.Write(writeData)
 		checkError("Cannot write to file", err)
 	*/
-}
 
-func addOrder(newOrder Order) []Order {
-	blankOrder := Order{
-		Elevator:  0,
-		Floor:   0,
-		Direction: false,
-		Timestamp: 0,
-	}
-	for index, value := range data {
-		if value.Timestamp == 0 && value.Elevator == newOrder.Elevator {
-			data[index] = newOrder
-			newOrder.Timestamp = 0
-		}
-	}
-	if newOrder.Timestamp != 0 {
+
+func addOrder(newOrder ChannelPacket) {
 		data = append(data, newOrder)
-		for i := 0; i < numElevators; i++ {
-			data = append(data, blankOrder)
-		}
-	}
-	return data
+		for i := 0; i < NumElevators; i++ {
+}
 }
 
-func removeOrder(toRemove Order) []Order {
-	blankOrder := Order{
-		Elevator:  0,
-		Floor:   0,
-		Direction: false,
-		Timestamp: 0,
-	}
-	for index, value := range data {
-		if value == toRemove {
-			data[index] = blankOrder
-		}
-	}
+func removeOrder(toRemove ChannelPacket) []ChannelPacket {
+
 	return data
 }
 
