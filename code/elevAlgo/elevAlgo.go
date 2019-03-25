@@ -91,7 +91,6 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 				PacketType: "buttonPress",
 				Floor:      int64(a.Floor),
 			}
-			fmt.Printf("%d\n", a.Button)
 			if a.Button == BT_HallUp {
 				NewOrder.Direction = true
 				ElevAlgoToOrders <- NewOrder
@@ -133,12 +132,13 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 					SetMotorDirection(MD_Stop)
 					engineWatchDog.Stop()
 					
-					elevator.Dir = DirStop
+                    // Bug under: Bør ikke sette DirStop, heisalgoritme funker ikke da
+					//elevator.Dir = DirStop
 					elevator.OrdersQueue[a][ButtonCab] = false    //erases cab order from queue
-					elevator.OrdersQueue[a][elevator.Dir] = false //erases order in correct direction
+                    // Bug under: elevator.Dir kan ha verdi -1
+					//elevator.OrdersQueue[a][elevator.Dir] = false //erases order in correct direction
 					SetButtonLamp(BT_Cab, a, false)               //Turn of button lamp in cab
 					
-
 					if elevator.Dir == DirDown { //Turn of button lamp in the correct direction
 						SetButtonLamp(BT_HallDown, a, false)
 					} else if elevator.Dir == DirUp {
@@ -146,7 +146,7 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 					} else {
 
 					}
-					
+
 				    packet := ChannelPacket{
 						PacketType: "OrderComplete",
 						Floor:      elevator.Floor,
@@ -192,6 +192,7 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 			fmt.Printf("Entering doorTimer\n")
 			SetDoorOpenLamp(false)
 			elevator.Dir = QueueFuncChooseDirection(elevator)
+            fmt.Printf("We need to go %d\n", elevator.Dir)
 			if elevator.Dir == DirDown {
 				SetMotorDirection(MD_Down)
 				engineWatchDog.Reset()
