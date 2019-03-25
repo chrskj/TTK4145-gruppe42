@@ -47,7 +47,7 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket) 
             sendMessage <-temp
 			toOrders <-temp
 		case temp := <-fromOrders:
-			fmt.Println(temp)
+			fmt.Println(temp.PacketType)
 			switch temp.PacketType {
 			case "requestCostFunction":
                 sendMessage <-temp
@@ -80,7 +80,7 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket) 
 			}
 		default:
 			fmt.Println("    .")
-			time.Sleep(1000 * time.Millisecond)
+			time.Sleep(time.Second)
 		}
 	}
 }
