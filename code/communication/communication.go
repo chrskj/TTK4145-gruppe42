@@ -7,14 +7,10 @@ package communication
 // - ta imot orders sin ordrelsite og sende ut
 
 import (
-	//"flag"
 	"fmt"
 	"os"
 	"time"
-
-	//"math/rand"
-	"strconv"
-
+	//"strconv"
 	"../network/bcast"
 	"../network/peers"
 	. "../util"
@@ -29,8 +25,8 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket) 
 	receiveMessage := make(chan ChannelPacket)
 	go bcast.Receiver(16570, receiveMessage)
 
-	go SendHeartbeat(strconv.Itoa(id))
-	go ReceiveHeartbeat()
+	//go SendHeartbeat(strconv.Itoa(id))
+	//go ReceiveHeartbeat()
 
 	idPacket := ChannelPacket{
 		PacketType: "elevID",
@@ -78,7 +74,7 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket) 
 			case "requestCostFunction":
 				toElevAlgo <-temp
 			}
-		default:
+        default:
 			fmt.Println("    .")
 			time.Sleep(time.Second)
 		}

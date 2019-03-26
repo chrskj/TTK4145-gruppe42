@@ -52,14 +52,10 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 	//Initialize channels
 	drv_buttons := make(chan ButtonEvent)
 	drv_floors := make(chan int)
-	drv_obstr := make(chan bool)
-	drv_stop := make(chan bool)
 
 	//Start polling
 	go PollButtons(drv_buttons)
 	go PollFloorSensor(drv_floors)
-	go PollObstructionSwitch(drv_obstr)
-	go PollStopButton(drv_stop)
 	//elevFSM.FSMinit()
 
 	for {
@@ -91,7 +87,7 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 				SetButtonLamp(a.Button, a.Floor, true)
 
 				if a.Floor == int(elevator.Floor) {
-					drv_floors <- a.Floor
+					go func() { drv_floors <- a.Floor }()
 				}
 
 				if elevator.State == Idle {
@@ -109,7 +105,6 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 					}
 				}
 			}
-
 		case a := <-drv_floors:
 			fmt.Printf("Entering drv_floors\n")
 			engineWatchDog.Reset()
@@ -144,31 +139,10 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 				elevator.State = DoorOpen
 
 			}
-
-		//If someone is trying to get into the elevator when doors are closing, the elevator will wait 3 more seconds
-		case <-drv_obstr:
-			fmt.Printf("Obstruction in door! Someone is trying to get in! \n")
-			SetMotorDirection(MD_Stop)
-			//OpenDoor(&elevator, &doorTimer)
-		case a := <-drv_stop:
-			elevator.State = EmergencyStop
-			fmt.Printf("Entered shit-hit-the-fan-mode \n", a)
-			SetMotorDirection(MD_Stop)
-			//si ifra om emergency stop
-
-			//Lage en pakke her!
-			/*packet := ChannelPacket{
-				PacketType: "EmergencyStop",
-				Floor:      elevator.Floor,
-				Direction:  DirIntToBool(elevator.Dir),
-				Timestamp:  uint64(time.Now().UnixNano()),
-			}
-			ElevAlgoToOrders <- packet*/
-
+		//If someone is trying to get into the elevator when doors are closing,
 		case <-engineWatchDog.TimeOverChannel():
 			fmt.Printf("Engine has timed out. Entering emergency stop mode .\n")
 			//drv_stop <- true
-
 		case <-doorTimer.C:
 			fmt.Printf("Entering doorTimer\n")
 			SetDoorOpenLamp(false)
