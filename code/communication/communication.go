@@ -8,20 +8,17 @@ package communication
 
 import (
 	"fmt"
-	"os"
 	"time"
+
 	//"strconv"
 	"../network/bcast"
 	"../network/peers"
 	. "../util"
 )
 
-func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket) {
-	id := os.Getpid()
-
+func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket, id int) {
 	sendMessage := make(chan ChannelPacket)
 	go bcast.Transmitter(16570, sendMessage)
-
 	receiveMessage := make(chan ChannelPacket)
 	go bcast.Receiver(16570, receiveMessage)
 
@@ -33,48 +30,58 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket) 
 		Elevator:   id,
 	}
 
-	toOrders <-idPacket
+	toOrders <- idPacket
 
 	for {
 		select {
 		case temp := <-fromElevAlgo:
-			fmt.Printf("Received packet of type %s from elevAlgo:\n", temp.PacketType)
+			//assume packet type "cost"
+			fmt.Printf("Comm Recieved packet of type %s from ElevAlgo\n", temp.PacketType)
 			// Skal begge meldinger sendes over nettet? (cost & ordersComplete)
-            sendMessage <-temp
-			toOrders <-temp
+			temp.Elevator = id
+			toOrders <- temp
+			sendMessage <- temp
 		case temp := <-fromOrders:
-			fmt.Println(temp.PacketType)
+			fmt.Printf("Comm Recieved packet of type %s from Orders\n", temp.PacketType)
 			switch temp.PacketType {
-			case "requestCostFunction":
-                sendMessage <-temp
-				toElevAlgo <-temp
+			case "requestCostFunc":
+				sendMessage <- temp
 			case "getOrderList":
 				// Hva må gjøres her?
-                sendMessage <-temp
+				sendMessage <- temp
 			case "newOrder":
+				fmt.Printf("newOrder.Elevator = %d\n", temp.Elevator)
 				// Hva må gjøres her?
-                sendMessage <-temp
+				if temp.Elevator == id {
+					toElevAlgo <- temp
+				} else {
+					sendMessage <- temp
+				}
 			case "orderList":
 				// Hva må gjøres her?
-                sendMessage <-temp
+				sendMessage <- temp
 			}
 		case temp := <-receiveMessage:
-			fmt.Printf("Received packet of type %s from the net:\n", temp.PacketType)
+			fmt.Printf("Comm Recieved packet of type %s from broadcast\n", temp.PacketType)
 			switch temp.PacketType {
 			case "newOrder":
-				toOrders <-temp
+				if temp.Elevator == id {
+					toElevAlgo <- temp
+				} else {
+					toOrders <- temp
+				}
 			case "orderList":
-				toOrders <-temp
+				toOrders <- temp
 			case "getOrderList":
-				toOrders <-temp
+				toOrders <- temp
 			case "cost":
-				toOrders <-temp
+				toOrders <- temp
 			case "orderComplete":
-				toOrders <-temp
-			case "requestCostFunction":
-				toElevAlgo <-temp
+				toOrders <- temp
+			case "requestCostFunc":
+				toElevAlgo <- temp
 			}
-        default:
+		default:
 			fmt.Println("    .")
 			time.Sleep(time.Second)
 		}

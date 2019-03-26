@@ -38,29 +38,22 @@ func InitOrders(OrdersToCom, ComToOrders, OrdersToElevAlgo,
 }
 
 func orderRoutine(OrdersToCom chan ChannelPacket, ComToOrders chan ChannelPacket, OrdersToElevAlgo chan ChannelPacket, ElevAlgoToOrders chan ChannelPacket) {
-	var costChan chan ChannelPacket
+	costChan := make(chan ChannelPacket)
 	for {
 		select {
 		case temp := <-ComToOrders:
 			switch temp.PacketType {
 			case "elevID":
+				fmt.Println("Recieved Elevator ID")
 				thisElevator = temp.Elevator
 			case "cost":
+				fmt.Println("before where I think it stops")
 				costChan <- temp
+				fmt.Println("after where I think it stops")
 			case "orderComplete":
-				removeOrder(ChannelPacket{
-					Elevator:  temp.Elevator,
-					Floor:     temp.Floor,
-					Direction: temp.Direction,
-					Timestamp: temp.Timestamp,
-				})
+				removeOrder(temp)
 			case "newOrder":
-				addOrder(ChannelPacket{
-					Elevator:  temp.Elevator,
-					Floor:     temp.Floor,
-					Direction: temp.Direction,
-					Timestamp: temp.Timestamp,
-				})
+				addOrder(temp)
 			case "getOrderList":
 				packet := ChannelPacket{
 					PacketType: "orderList",
@@ -73,6 +66,7 @@ func orderRoutine(OrdersToCom chan ChannelPacket, ComToOrders chan ChannelPacket
 		case temp := <-ElevAlgoToOrders:
 			switch temp.PacketType {
 			case "buttonPress":
+				fmt.Println("Orders recieved " + temp.PacketType + " from elevAlgo")
 				newOrder := ChannelPacket{
 					Elevator:  -1,
 					Floor:     temp.Floor,
@@ -88,37 +82,49 @@ func orderRoutine(OrdersToCom chan ChannelPacket, ComToOrders chan ChannelPacket
 				}
 				//if not: start the cost compare
 				if newOrder.Timestamp > 0 {
-					go costCompare(newOrder, OrdersToElevAlgo, OrdersToCom)
+					go costCompare(newOrder, OrdersToElevAlgo, OrdersToCom, costChan)
 				}
 			}
 		}
 	}
 }
 
-func costCompare(newOrder ChannelPacket, OrdersToElevAlgo, OrdersToCom chan ChannelPacket) {
+func costCompare(newOrder ChannelPacket, OrdersToElevAlgo, OrdersToCom, costChan chan ChannelPacket) {
 	OrdersToCom <- ChannelPacket{
 		PacketType: "requestCostFunc",
 		Elevator:   thisElevator,
 	}
-	costTicker := time.NewTicker(10 * time.Millisecond)
-	var ticks uint = 0
+	//costTicker := time.NewTicker(10 * time.Millisecond)
+	tttimer := time.NewTimer(5 * time.Second)
+	timein := true
+	go func() {
+		<-tttimer.C
+		timein = false
+	}()
+	//var ticks uint
 	var costs []ChannelPacket
-	for recievedOrders := 0; recievedOrders < NumElevators && ticks < 200; {
+	for recievedOrders := 0; recievedOrders < NumElevators && timein; {
 		select {
 		case temp := <-costChan:
+			fmt.Println("Orders recieved cost")
 			unique := true
-			for _, val := range costs {
-				if val.Elevator == temp.Elevator {
-					unique = false
+			if len(costs) > 0 {
+				for _, val := range costs {
+					if val.Elevator == temp.Elevator {
+						unique = false
+					}
 				}
 			}
 			if unique {
 				costs = append(costs, temp)
 				recievedOrders++
 			}
-		case <-costTicker.C:
-			ticks++
+		default:
+			time.Sleep(10 * time.Millisecond)
 		}
+	}
+	if !timein {
+		fmt.Println("timed out on cost compare")
 	}
 	max := 9999.0
 	for _, val := range costs {
@@ -130,11 +136,8 @@ func costCompare(newOrder ChannelPacket, OrdersToElevAlgo, OrdersToCom chan Chan
 	if newOrder.Elevator != -1 {
 		addOrder(newOrder)
 		temp := newOrder
-		if temp.Elevator == thisElevator {
-			OrdersToElevAlgo <- temp
-		} else {
-			OrdersToCom <- temp
-		}
+		temp.PacketType = "newOrder"
+		OrdersToCom <- temp
 	} else {
 		//error, no costs received
 	}
