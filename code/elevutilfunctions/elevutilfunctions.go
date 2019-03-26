@@ -1,6 +1,8 @@
 package elevutilfunctions
 
 import (
+	"math"
+
 	. "../elevio"
 	. "../util"
 )
@@ -12,15 +14,18 @@ func CalculateCostFunction(elevator Elev, order ChannelPacket) float64 {
 	//if order.Direction != elevator.Dir {
 	//	cost = cost + 2
 	//}
-	switch elevator.Dir {
-	case DirDown:
-		if order.Floor > elevator.Floor {
-			cost = cost + 2
+	switch elevator.State {
+	case Idle:
+		return math.Abs(float64(order.Floor - elevator.Floor))
+	case Running: //Checks if the elevator is on it's way towards the potential new order
+		if ((elevator.Direction==2) && (order.Floor - elevator.Floor)>0)||((elevator.Direction==0) && (order.Floor - elevator.Floor)<0){
+			return math.Abs(float64(order.Floor - elevator.Floor))+0.5*QueueFuncCountOrders(elevator)
+		} else if ((elevator.Direction==0) && (order.Floor - elevator.Floor)>0)||((elevator.Direction==2) && (order.Floor - elevator.Floor)<0)){
+			return float64(2*NumFloors-elevator.Floor-Order.floor-2)+0.5*QueueFuncCountOrders(elevator)
 		}
-	case DirUp:
-		if order.Floor < elevator.Floor {
-			cost = cost + 2
-		}
+	case DoorOpen:
+		
+
 	}
 	return float64(QueueFuncCountOrders(elevator)) + cost
 }

@@ -29,6 +29,7 @@ var thisElevator int
 var costChan chan ChannelPacket
 var data []ChannelPacket
 var localOrders [2][]ChannelPacket
+var comparing bool = false
 
 func InitOrders(OrdersToCom, ComToOrders, OrdersToElevAlgo,
 	ElevAlgoToOrders chan ChannelPacket) {
@@ -47,9 +48,11 @@ func orderRoutine(OrdersToCom chan ChannelPacket, ComToOrders chan ChannelPacket
 				fmt.Println("Recieved Elevator ID")
 				thisElevator = temp.Elevator
 			case "cost":
-				fmt.Println("before where I think it stops")
-				costChan <- temp
-				fmt.Println("after where I think it stops")
+				if comparing {
+					fmt.Println("before where I think it stops")
+					costChan <- temp
+					fmt.Println("after where I think it stops")
+				}
 			case "orderComplete":
 				removeOrder(temp)
 			case "newOrder":
@@ -90,6 +93,7 @@ func orderRoutine(OrdersToCom chan ChannelPacket, ComToOrders chan ChannelPacket
 }
 
 func costCompare(newOrder ChannelPacket, OrdersToElevAlgo, OrdersToCom, costChan chan ChannelPacket) {
+	comparing = true
 	OrdersToCom <- ChannelPacket{
 		PacketType: "requestCostFunc",
 		Elevator:   thisElevator,
@@ -141,6 +145,7 @@ func costCompare(newOrder ChannelPacket, OrdersToElevAlgo, OrdersToCom, costChan
 	} else {
 		//error, no costs received
 	}
+	comparing = false
 }
 
 func readFile() {
