@@ -40,7 +40,6 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 		OrdersQueue: [NumFloors][NumOrderTypes]bool{},
 	}
 
-	var aTemp int = -1
 	//Start watchdogs
 	engineWatchDog := w.New(3 * time.Second)
 	engineWatchDog.Reset()
@@ -104,6 +103,10 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 				elevator.OrdersQueue[a.Floor][ButtonCab] = true
 				SetButtonLamp(a.Button, a.Floor, true)
 
+				if a.Floor == int(elevator.Floor) {
+					drv_floors <- a.Floor
+				}
+
 				if elevator.State == Idle {
 					elevator.Dir = QueueFuncChooseDirection(elevator)
 					if elevator.Dir == DirDown {
@@ -115,53 +118,49 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 						engineWatchDog.Reset()
 						elevator.State = Running
 					} else {
-						fmt.Printf("Dafuq?")
+						fmt.Println("I prefer just chillin' here for a while if you don't mind")
 					}
 				}
 			}
 
 		case a := <-drv_floors:
 			fmt.Printf("Entering drv_floors\n")
-			if aTemp != a && elevator.OrdersQueue[a][ButtonCab] { //Last condition ensures that elevator re-opens if someone forgets to get off.
-				engineWatchDog.Reset()
-				SetFloorIndicator(a)
-				fmt.Printf("We are on floor nr. %+v\n", a)
-				elevator.Floor = int64(a)
+			engineWatchDog.Reset()
+			SetFloorIndicator(a)
+			fmt.Printf("We are on floor nr. %+v\n", a)
+			elevator.Floor = int64(a)
+			//elevAlgoToOrders <- a //Sends the current floor to orders
+			if QueueFuncShouldStop(elevator) {
+				SetMotorDirection(MD_Stop)
+				engineWatchDog.Stop()
 
-				//elevAlgoToOrders <- a //Sends the current floor to orders
-				if QueueFuncShouldStop(elevator) {
-					SetMotorDirection(MD_Stop)
-					engineWatchDog.Stop()
+				// Bug under: Bør ikke sette DirStop, heisalgoritme funker ikke da
+				//elevator.Dir = DirStop
+				elevator.OrdersQueue[a][ButtonCab] = false //erases cab order from queue
+				// Bug under: elevator.Dir kan ha verdi -1
+				//elevator.OrdersQueue[a][elevator.Dir] = false //erases order in correct direction
+				SetButtonLamp(BT_Cab, a, false) //Turn of button lamp in cab
 
-					// Bug under: Bør ikke sette DirStop, heisalgoritme funker ikke da
-					//elevator.Dir = DirStop
-					elevator.OrdersQueue[a][ButtonCab] = false //erases cab order from queue
-					// Bug under: elevator.Dir kan ha verdi -1
-					//elevator.OrdersQueue[a][elevator.Dir] = false //erases order in correct direction
-					SetButtonLamp(BT_Cab, a, false) //Turn of button lamp in cab
-
-					if elevator.Dir == DirDown { //Turn of button lamp in the correct direction
-						SetButtonLamp(BT_HallDown, a, false)
-					} else if elevator.Dir == DirUp {
-						SetButtonLamp(BT_HallUp, a, false)
-					} else {
-
-					}
-
-					packet := ChannelPacket{
-						PacketType: "OrderComplete",
-						Floor:      elevator.Floor,
-						Direction:  DirIntToBool(elevator.Dir),
-						Timestamp:  uint64(time.Now().UnixNano()),
-					}
-					ElevAlgoToCom <- packet          //Notifying that order is complete
-					doorTimer.Reset(3 * time.Second) //begin 3 seconds of waiting for people to enter and leave car
-					SetDoorOpenLamp(true)
-					elevator.State = DoorOpen
+				if elevator.Dir == DirDown { //Turn of button lamp in the correct direction
+					SetButtonLamp(BT_HallDown, a, false)
+				} else if elevator.Dir == DirUp {
+					SetButtonLamp(BT_HallUp, a, false)
+				} else {
 
 				}
+
+				packet := ChannelPacket{
+					PacketType: "OrderComplete",
+					Floor:      elevator.Floor,
+					Direction:  DirIntToBool(elevator.Dir),
+					Timestamp:  uint64(time.Now().UnixNano()),
+				}
+				ElevAlgoToCom <- packet          //Notifying that order is complete
+				doorTimer.Reset(3 * time.Second) //begin 3 seconds of waiting for people to enter and leave car
+				SetDoorOpenLamp(true)
+				elevator.State = DoorOpen
+
 			}
-			aTemp = a
 
 		//If someone is trying to get into the elevator when doors are closing, the elevator will wait 3 more seconds
 		case <-drv_obstr:
