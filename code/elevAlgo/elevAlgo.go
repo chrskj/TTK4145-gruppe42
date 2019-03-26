@@ -146,17 +146,7 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 			if QueueFuncShouldStop(elevator) {
 				SetMotorDirection(MD_Stop)
 				engineWatchDog.Stop()
-				elevator.OrdersQueue[a][ButtonCab] = false //erases cab order from queue
-				SetButtonLamp(BT_Cab, a, false)            //Turn of button lamp in cab
-
-				if elevator.Dir == DirDown { //Turn of button lamp in the correct direction
-					SetButtonLamp(BT_HallDown, a, false)
-				} else if elevator.Dir == DirUp {
-					SetButtonLamp(BT_HallUp, a, false)
-				} else {
-
-				}
-
+				ClearOrders(a, &elevator)
 				packet := ChannelPacket{
 					PacketType: "OrderComplete",
 					Floor:      elevator.Floor,

@@ -41,6 +41,15 @@ func SetOrder(direction bool, floor int, elevator *Elev) {
 	}
 }
 
+func ClearOrders(floor int, elevator *Elev) {
+	elevator.OrdersQueue[floor][ButtonCab] = false //erases orders to current floor from queue
+	elevator.OrdersQueue[floor][ButtonUp] = false
+	elevator.OrdersQueue[floor][ButtonDown] = false
+	SetButtonLamp(BT_HallDown, floor, false)
+	SetButtonLamp(BT_HallUp, floor, false)
+	SetButtonLamp(BT_Cab, floor, false)
+}
+
 func CreateCostPacket(order ChannelPacket, elevator *Elev) ChannelPacket {
 	packet := ChannelPacket{
 		PacketType: "cost",
