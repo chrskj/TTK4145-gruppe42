@@ -39,8 +39,11 @@ func main() {
 	var elevIDstring string
 	flag.StringVar(&elevIDstring, "id", "-1", "Elevator ID")
 	flag.Parse()
-	elevID, _ := strconv.ParseInt(elevIDstring, 10, 64)
-	fmt.Println(elevID)
+	var elevID int
+	func() {
+		temp, _ := strconv.ParseInt(elevIDstring, 10, 64)
+		elevID = int(temp)
+	}()
 
 	go elevAlgo.ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders,
 		ComToElevAlgo, ElevAlgoToCom, elevPort)

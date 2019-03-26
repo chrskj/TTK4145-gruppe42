@@ -164,7 +164,7 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 
 					elevator.Dir = DirStop
 					elevator.OrdersQueue[a][ButtonCab] = false //erases cab order from queue
-					fmt.Println(elevator.Dir)
+					fmt.Printf("Direction = %d\n", elevator.Dir)
 					elevator.OrdersQueue[a][elevator.Dir*2] = false //erases order in correct direction
 					SetButtonLamp(BT_Cab, a, false)                 //Turn of button lamp in cab
 
