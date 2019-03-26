@@ -39,7 +39,7 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 	}
 	var aTemp int = -1
 	//Start watchdogs
-	engineWatchDog := w.New(3*time.Second)
+	engineWatchDog := w.New(3 * time.Second)
 	engineWatchDog.Reset()
 	engineWatchDog.Stop()
 
@@ -76,13 +76,15 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 		case a := <-ComToElevAlgo:
 			fmt.Printf("Entering ComToElevAlgo\n")
 			packet := ChannelPacket{
-				PacketType: "cost",//Hvis man bestiller til samme etasje, går den opp og ned.
+				PacketType: "cost", //Hvis man bestiller til samme etasje, går den opp og ned.
 				Cost: CalculateCostFunction(elevator, ChannelPacket{
 					Elevator:  a.Elevator,
 					Floor:     a.Floor,
 					Direction: a.Direction}),
 			}
-			ElevAlgoToCom <- packet
+			go func(packet ChannelPacket, ElevAlgoToCom chan ChannelPacket) {
+				ElevAlgoToCom <- packet
+			}(packet, ElevAlgoToCom)
 
 		case a := <-drv_buttons:
 			fmt.Printf("Entering drv_buttons\n")
@@ -99,11 +101,11 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 				NewOrder.Direction = false
 				ElevAlgoToOrders <- NewOrder
 			} else {
-				if a.Floor != int(elevator.Floor){
+				if a.Floor != int(elevator.Floor) {
 					elevator.OrdersQueue[a.Floor][ButtonCab] = true
 					SetButtonLamp(a.Button, a.Floor, true)
 				}
-				
+
 				if elevator.State == Idle {
 					elevator.Dir = QueueFuncChooseDirection(elevator)
 					if elevator.Dir == DirDown {
@@ -127,17 +129,16 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 				SetFloorIndicator(a)
 				fmt.Printf("We are on floor nr. %+v\n", a)
 				elevator.Floor = int64(a)
-				
+
 				//elevAlgoToOrders <- a //Sends the current floor to orders
 				if QueueFuncShouldStop(elevator) {
 					SetMotorDirection(MD_Stop)
 					engineWatchDog.Stop()
-					
+
 					elevator.Dir = DirStop
 					elevator.OrdersQueue[a][ButtonCab] = false    //erases cab order from queue
 					elevator.OrdersQueue[a][elevator.Dir] = false //erases order in correct direction
 					SetButtonLamp(BT_Cab, a, false)               //Turn of button lamp in cab
-					
 
 					if elevator.Dir == DirDown { //Turn of button lamp in the correct direction
 						SetButtonLamp(BT_HallDown, a, false)
@@ -146,20 +147,20 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 					} else {
 
 					}
-					
+
 					/*packet := ChannelPacket{
 						PacketType: "OrderComplete",
 						Floor:      elevator.Floor,
 						Direction:  DirIntToBool(elevator.Dir),
 						Timestamp:  uint64(time.Now().UnixNano()),
 					}*/
-					
+
 					//ElevAlgoToCom <- packet          //Notifying that order is complete
 					fmt.Println("Kommer vi hit?")
 					doorTimer.Reset(3 * time.Second) //begin 3 seconds of waiting for people to enter and leave car
 					SetDoorOpenLamp(true)
 					elevator.State = DoorOpen
-					
+
 				}
 			}
 			aTemp = a

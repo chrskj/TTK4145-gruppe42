@@ -20,12 +20,10 @@ import (
 	. "../util"
 )
 
-var sendMessage chan ChannelPacket
-
 func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket) {
 	id := os.Getpid()
+	sendMessage := make(chan ChannelPacket)
 	go bcast.Transmitter(16570, sendMessage)
-
 	receiveMessage := make(chan ChannelPacket)
 	go bcast.Receiver(16570, receiveMessage)
 
@@ -42,28 +40,27 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket) 
 	for {
 		select {
 		case temp := <-fromElevAlgo:
-			fmt.Println(temp.PacketType)
+			fmt.Printf("Comm Recieved packet of type %s from ElevAlgo\n", temp.PacketType)
 			// Skal begge meldinger sendes over nettet? (cost & ordersComplete)
 			toOrders <- temp
-			SendMessage(temp)
+			sendMessage <- temp
 		case temp := <-fromOrders:
-			fmt.Println(temp.PacketType)
+			fmt.Printf("Comm Recieved packet of type %s from Orders\n", temp.PacketType)
 			switch temp.PacketType {
-			case "requestCostFunction":
-				SendMessage(temp)
-				toElevAlgo <- temp
+			case "requestCostFunc":
+				sendMessage <- temp
 			case "getOrderList":
 				// Hva må gjøres her?
-				SendMessage(temp)
+				sendMessage <- temp
 			case "newOrder":
 				// Hva må gjøres her?
-				SendMessage(temp)
+				sendMessage <- temp
 			case "orderList":
 				// Hva må gjøres her?
-				SendMessage(temp)
+				sendMessage <- temp
 			}
 		case temp := <-receiveMessage:
-			fmt.Printf("Recieved packet of type%s:\n", temp.PacketType)
+			fmt.Printf("Comm Recieved packet of type %s from broadcast\n", temp.PacketType)
 			switch temp.PacketType {
 			case "newOrder":
 				toOrders <- temp
@@ -75,7 +72,7 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket) 
 				toOrders <- temp
 			case "orderComplete":
 				toOrders <- temp
-			case "requestCostFunction":
+			case "requestCostFunc":
 				toElevAlgo <- temp
 			}
 		default:
@@ -85,9 +82,7 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket) 
 	}
 }
 
-func SendMessage(temp ChannelPacket) {
-	sendMessage <- temp
-}
+//SendMessage(packet ChannelPacket, sendMessage chan )
 
 func SendHeartbeat(id string) {
 	peerTxEnable := make(chan bool)
