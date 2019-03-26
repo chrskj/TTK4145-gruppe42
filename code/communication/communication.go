@@ -8,15 +8,16 @@ package communication
 
 import (
 	"fmt"
+	"strconv"
 	"time"
-	//"strconv"
+
 	"../network/bcast"
 	"../network/peers"
 	. "../util"
 )
 
 func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
-        id int) {
+	id int) {
 
 	sendMessage := make(chan ChannelPacket)
 	go bcast.Transmitter(16570, sendMessage)
@@ -24,7 +25,7 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 	receiveMessage := make(chan ChannelPacket)
 	go bcast.Receiver(16570, receiveMessage)
 
-    peerTxEnable := make(chan bool)
+	peerTxEnable := make(chan bool)
 	go peers.Transmitter(16569, strconv.Itoa(id), peerTxEnable)
 
 	peerUpdateCh := make(chan peers.PeerUpdate)
@@ -91,7 +92,7 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 			fmt.Printf("  Peers:    %q\n", temp.Peers)
 			fmt.Printf("  New:      %q\n", temp.New)
 			fmt.Printf("  Lost:     %q\n", temp.Lost)
-        default:
+		default:
 			fmt.Println("    .")
 			time.Sleep(time.Second)
 		}
