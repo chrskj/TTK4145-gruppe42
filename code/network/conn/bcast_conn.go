@@ -1,6 +1,6 @@
 // +build !windows
 
-package linux_conn
+package conn
 
 import (
 	"net"

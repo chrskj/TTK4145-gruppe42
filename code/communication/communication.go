@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"strconv"
 	"time"
-
 	"../network/bcast"
 	"../network/peers"
 	. "../util"
