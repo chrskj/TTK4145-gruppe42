@@ -75,16 +75,43 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 
 		case a := <-ComToElevAlgo:
 			fmt.Printf("Entering ComToElevAlgo\n")
-			packet := ChannelPacket{
-				PacketType: "cost", //Hvis man bestiller til samme etasje, går den opp og ned.
-				Cost: CalculateCostFunction(elevator, ChannelPacket{
-					Elevator:  a.Elevator,
-					Floor:     a.Floor,
-					Direction: a.Direction}),
+			switch a.PacketType {
+			case "newOrder":
+				fmt.Printf("Got new order from comm\n")
+				fmt.Println(a)
+				if a.Direction {
+					elevator.OrdersQueue[a.Floor][ButtonUp] = true
+					SetButtonLamp(BT_HallUp, int(a.Floor), true)
+				} else {
+					elevator.OrdersQueue[a.Floor][ButtonDown] = true
+					SetButtonLamp(BT_HallDown, int(a.Floor), true)
+				}
+				if elevator.State == Idle {
+					elevator.Dir = QueueFuncChooseDirection(elevator)
+					if elevator.Dir == DirDown {
+						SetMotorDirection(MD_Down)
+						engineWatchDog.Reset()
+						elevator.State = Running
+					} else if elevator.Dir == DirUp {
+						SetMotorDirection(MD_Up)
+						engineWatchDog.Reset()
+						elevator.State = Running
+					} else {
+						fmt.Printf("Dafuq?")
+					}
+				}
+			case "requestCostFunc":
+				packet := ChannelPacket{
+					PacketType: "cost", //Hvis man bestiller til samme etasje, går den opp og ned.
+					Cost: CalculateCostFunction(elevator, ChannelPacket{
+						Elevator:  a.Elevator,
+						Floor:     a.Floor,
+						Direction: a.Direction}),
+				}
+				go func(packet ChannelPacket, ElevAlgoToCom chan ChannelPacket) {
+					ElevAlgoToCom <- packet
+				}(packet, ElevAlgoToCom) //ble tidligere stuck her, bør kanskje endre
 			}
-			go func(packet ChannelPacket, ElevAlgoToCom chan ChannelPacket) {
-				ElevAlgoToCom <- packet
-			}(packet, ElevAlgoToCom)
 
 		case a := <-drv_buttons:
 			fmt.Printf("Entering drv_buttons\n")
@@ -136,9 +163,10 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 					engineWatchDog.Stop()
 
 					elevator.Dir = DirStop
-					elevator.OrdersQueue[a][ButtonCab] = false    //erases cab order from queue
-					elevator.OrdersQueue[a][elevator.Dir] = false //erases order in correct direction
-					SetButtonLamp(BT_Cab, a, false)               //Turn of button lamp in cab
+					elevator.OrdersQueue[a][ButtonCab] = false //erases cab order from queue
+					fmt.Println(elevator.Dir)
+					elevator.OrdersQueue[a][elevator.Dir*2] = false //erases order in correct direction
+					SetButtonLamp(BT_Cab, a, false)                 //Turn of button lamp in cab
 
 					if elevator.Dir == DirDown { //Turn of button lamp in the correct direction
 						SetButtonLamp(BT_HallDown, a, false)

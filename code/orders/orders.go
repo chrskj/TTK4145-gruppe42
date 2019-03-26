@@ -44,25 +44,16 @@ func orderRoutine(OrdersToCom chan ChannelPacket, ComToOrders chan ChannelPacket
 		case temp := <-ComToOrders:
 			switch temp.PacketType {
 			case "elevID":
+				fmt.Println("Recieved Elevator ID")
 				thisElevator = temp.Elevator
 			case "cost":
 				fmt.Println("before where I think it stops")
 				costChan <- temp
 				fmt.Println("after where I think it stops")
 			case "orderComplete":
-				removeOrder(ChannelPacket{
-					Elevator:  temp.Elevator,
-					Floor:     temp.Floor,
-					Direction: temp.Direction,
-					Timestamp: temp.Timestamp,
-				})
+				removeOrder(temp)
 			case "newOrder":
-				addOrder(ChannelPacket{
-					Elevator:  temp.Elevator,
-					Floor:     temp.Floor,
-					Direction: temp.Direction,
-					Timestamp: temp.Timestamp,
-				})
+				addOrder(temp)
 			case "getOrderList":
 				packet := ChannelPacket{
 					PacketType: "orderList",
@@ -146,11 +137,7 @@ func costCompare(newOrder ChannelPacket, OrdersToElevAlgo, OrdersToCom, costChan
 		addOrder(newOrder)
 		temp := newOrder
 		temp.PacketType = "newOrder"
-		if temp.Elevator == thisElevator {
-			OrdersToElevAlgo <- temp
-		} else {
-			OrdersToCom <- temp
-		}
+		OrdersToCom <- temp
 	} else {
 		//error, no costs received
 	}

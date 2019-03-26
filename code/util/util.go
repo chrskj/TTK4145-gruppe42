@@ -24,7 +24,7 @@ const ( //stor bokstav
 type Direction int //for elevator IO use, not orders
 
 const (
-	DirDown Direction = iota - 1
+	DirDown Direction = iota
 	DirStop
 	DirUp
 )

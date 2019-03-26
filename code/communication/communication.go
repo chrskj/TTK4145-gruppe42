@@ -9,7 +9,6 @@ package communication
 import (
 	//"flag"
 	"fmt"
-	"os"
 	"time"
 
 	//"math/rand"
@@ -20,8 +19,7 @@ import (
 	. "../util"
 )
 
-func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket) {
-	id := os.Getpid()
+func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket, id int) {
 	sendMessage := make(chan ChannelPacket)
 	go bcast.Transmitter(16570, sendMessage)
 	receiveMessage := make(chan ChannelPacket)
@@ -40,8 +38,10 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket) 
 	for {
 		select {
 		case temp := <-fromElevAlgo:
+			//assume packet type "cost"
 			fmt.Printf("Comm Recieved packet of type %s from ElevAlgo\n", temp.PacketType)
 			// Skal begge meldinger sendes over nettet? (cost & ordersComplete)
+			temp.Elevator = id
 			toOrders <- temp
 			sendMessage <- temp
 		case temp := <-fromOrders:
@@ -53,8 +53,13 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket) 
 				// Hva må gjøres her?
 				sendMessage <- temp
 			case "newOrder":
+				fmt.Printf("newOrder.Elevator = %d\n", temp.Elevator)
 				// Hva må gjøres her?
-				sendMessage <- temp
+				if temp.Elevator == id {
+					toElevAlgo <- temp
+				} else {
+					sendMessage <- temp
+				}
 			case "orderList":
 				// Hva må gjøres her?
 				sendMessage <- temp
@@ -63,7 +68,11 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket) 
 			fmt.Printf("Comm Recieved packet of type %s from broadcast\n", temp.PacketType)
 			switch temp.PacketType {
 			case "newOrder":
-				toOrders <- temp
+				if temp.Elevator == id {
+					toElevAlgo <- temp
+				} else {
+					toOrders <- temp
+				}
 			case "orderList":
 				toOrders <- temp
 			case "getOrderList":
