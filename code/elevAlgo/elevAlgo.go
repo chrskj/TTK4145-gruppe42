@@ -146,7 +146,7 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 			if QueueFuncShouldStop(elevator) {
 				SetMotorDirection(MD_Stop)
 				engineWatchDog.Stop()
-
+				ClearOrders(a, &elevator)
 				packet := ChannelPacket{
 					PacketType: "OrderComplete",
 					Floor:      elevator.Floor,
