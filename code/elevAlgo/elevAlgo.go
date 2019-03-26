@@ -66,8 +66,39 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 			SetOrder(a.Direction, int(a.Floor), elevatorPtr)
 
 		case a := <-ComToElevAlgo:
-			fmt.Printf("Entering ComToElevAlgo\n Responding cost function \n")
-			ElevAlgoToCom <- CreateCostPacket(a, elevatorPtr)
+
+			fmt.Printf("Entering ComToElevAlgo\n")
+			switch a.PacketType {
+			case "newOrder":
+				fmt.Printf("Got new order from comm\n")
+				fmt.Println(a)
+				if a.Direction {
+					elevator.OrdersQueue[a.Floor][ButtonUp] = true
+					SetButtonLamp(BT_HallUp, int(a.Floor), true)
+				} else {
+					elevator.OrdersQueue[a.Floor][ButtonDown] = true
+					SetButtonLamp(BT_HallDown, int(a.Floor), true)
+				}
+				if elevator.State == Idle {
+					elevator.Dir = QueueFuncChooseDirection(elevator)
+					if elevator.Dir == DirDown {
+						SetMotorDirection(MD_Down)
+						engineWatchDog.Reset()
+						elevator.State = Running
+					} else if elevator.Dir == DirUp {
+						SetMotorDirection(MD_Up)
+						engineWatchDog.Reset()
+						elevator.State = Running
+					} else {
+						fmt.Printf("Dafuq?")
+					}
+				}
+			case "requestCostFunc":
+				fmt.Printf("Entering ComToElevAlgo\n Responding cost function \n")
+				go func(packet ChannelPacket, ElevAlgoToCom chan ChannelPacket) {
+					ElevAlgoToCom <- CreateCostPacket(a, elevatorPtr)
+				}(packet, ElevAlgoToCom) //ble tidligere stuck her, bør kanskje endre
+			}
 
 		case a := <-drv_buttons:
 			fmt.Printf("Entering drv_buttons\n")
