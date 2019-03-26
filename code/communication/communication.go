@@ -9,7 +9,7 @@ package communication
 import (
 	"fmt"
 	"time"
-	//"strconv"
+	"strconv"
 	"../network/bcast"
 	"../network/peers"
 	. "../util"

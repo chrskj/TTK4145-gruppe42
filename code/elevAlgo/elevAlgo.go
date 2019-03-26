@@ -95,9 +95,9 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 				}
 			case "requestCostFunc":
 				fmt.Printf("Entering ComToElevAlgo\n Responding cost function \n")
-				go func(packet ChannelPacket, ElevAlgoToCom chan ChannelPacket) {
+				go func(ElevAlgoToCom chan ChannelPacket) {
 					ElevAlgoToCom <- CreateCostPacket(a, elevatorPtr)
-				}(packet, ElevAlgoToCom) //ble tidligere stuck her, bør kanskje endre
+				}(ElevAlgoToCom) //ble tidligere stuck her, bør kanskje endre
 			}
 
 		case a := <-drv_buttons:
