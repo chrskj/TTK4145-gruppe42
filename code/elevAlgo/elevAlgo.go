@@ -1,9 +1,8 @@
 //spawne phoenix backup
-//fikse den watchdogen
 
 //Hvis i strømmen går, må den rette seg opp hvis den ser en etasje igjen
-//Start og stopp funksjon til heis
-//åpne dør hvis man trykker på nåværende etasje
+//Start og stopp funksjon til heis (for mye jobb?)
+//Endre lys slik at de også skrus av når heisen er på vei opp men bestillingen er nedover
 
 package elevAlgo
 
@@ -11,8 +10,8 @@ import (
 	"fmt"
 	"time"
 
-	. "../QueueFunctions"
 	. "../elevio"
+	. "../elevutilfunctions"
 	. "../util"
 	w "../watchdog"
 )
@@ -39,7 +38,7 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 		Dir:         DirUp,
 		OrdersQueue: [NumFloors][NumOrderTypes]bool{},
 	}
-
+	var elevatorPtr *Elev = &elevator
 	//Start watchdogs
 	engineWatchDog := w.New(3 * time.Second)
 	engineWatchDog.Reset()
@@ -48,6 +47,7 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 	//Start timers
 	doorTimer := time.NewTimer(3 * time.Second)
 	doorTimer.Stop()
+	//var doorTimerPtr **time.Timer = &doorTimer
 
 	//Initialize channels
 	drv_buttons := make(chan ButtonEvent)
@@ -66,25 +66,12 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 		ElevatorPrinter(elevator)
 		select {
 		case a := <-OrdersToElevAlgo: //recieves a new ordre from orders
-			fmt.Printf("Enteng OrdersToElevAlgo\n")
-			if a.Direction {
-				elevator.OrdersQueue[a.Floor][ButtonUp] = true
-				SetButtonLamp(BT_HallUp, int(a.Floor), true)
-			} else {
-				elevator.OrdersQueue[a.Floor][ButtonDown] = true
-				SetButtonLamp(BT_HallDown, int(a.Floor), true)
-			}
+			fmt.Printf("Entering OrdersToElevAlgo\n Setting order\n")
+			SetOrder(a.Direction, int(a.Floor), elevatorPtr)
 
 		case a := <-ComToElevAlgo:
-			fmt.Printf("Entering ComToElevAlgo\n")
-			packet := ChannelPacket{
-				PacketType: "cost",
-				Cost: CalculateCostFunction(elevator, ChannelPacket{
-					Elevator:  a.Elevator,
-					Floor:     a.Floor,
-					Direction: a.Direction}),
-			}
-			ElevAlgoToCom <- packet
+			fmt.Printf("Entering ComToElevAlgo\n Responding cost function \n")
+			ElevAlgoToCom <- CreateCostPacket(a, elevatorPtr)
 
 		case a := <-drv_buttons:
 			fmt.Printf("Entering drv_buttons\n")
@@ -133,13 +120,8 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 			if QueueFuncShouldStop(elevator) {
 				SetMotorDirection(MD_Stop)
 				engineWatchDog.Stop()
-
-				// Bug under: Bør ikke sette DirStop, heisalgoritme funker ikke da
-				//elevator.Dir = DirStop
 				elevator.OrdersQueue[a][ButtonCab] = false //erases cab order from queue
-				// Bug under: elevator.Dir kan ha verdi -1
-				//elevator.OrdersQueue[a][elevator.Dir] = false //erases order in correct direction
-				SetButtonLamp(BT_Cab, a, false) //Turn of button lamp in cab
+				SetButtonLamp(BT_Cab, a, false)            //Turn of button lamp in cab
 
 				if elevator.Dir == DirDown { //Turn of button lamp in the correct direction
 					SetButtonLamp(BT_HallDown, a, false)
@@ -155,7 +137,8 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 					Direction:  DirIntToBool(elevator.Dir),
 					Timestamp:  uint64(time.Now().UnixNano()),
 				}
-				ElevAlgoToCom <- packet          //Notifying that order is complete
+				ElevAlgoToCom <- packet //Notifying that order is complete
+				//OpenDoor(elevatorPtr, doorTimerPtr) Prosjekt for en annen gang
 				doorTimer.Reset(3 * time.Second) //begin 3 seconds of waiting for people to enter and leave car
 				SetDoorOpenLamp(true)
 				elevator.State = DoorOpen
@@ -166,9 +149,7 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 		case <-drv_obstr:
 			fmt.Printf("Obstruction in door! Someone is trying to get in! \n")
 			SetMotorDirection(MD_Stop)
-			elevator.State = DoorOpen
-			doorTimer.Reset(3 * time.Second)
-			elevator.State = Running
+			//OpenDoor(&elevator, &doorTimer)
 		case a := <-drv_stop:
 			elevator.State = EmergencyStop
 			fmt.Printf("Entered shit-hit-the-fan-mode \n", a)

@@ -1,6 +1,7 @@
-package QueueFunctions
+package elevutilfunctions
 
 import (
+	. "../elevio"
 	. "../util"
 )
 
@@ -22,6 +23,33 @@ func CalculateCostFunction(elevator Elev, order ChannelPacket) float64 {
 		}
 	}
 	return float64(QueueFuncCountOrders(elevator)) + cost
+}
+
+/*func OpenDoor(elevator *Elev, doorTimer **time.Timer) {
+	doorTimer..Reset(3 * time.Second) //begin 3 seconds of waiting for people to enter and leave car
+	SetDoorOpenLamp(true)
+	elevator.State = DoorOpen
+}*/
+
+func SetOrder(direction bool, floor int, elevator *Elev) {
+	if direction {
+		elevator.OrdersQueue[floor][ButtonUp] = true
+		SetButtonLamp(BT_HallUp, floor, true)
+	} else {
+		elevator.OrdersQueue[floor][ButtonDown] = true
+		SetButtonLamp(BT_HallDown, floor, true)
+	}
+}
+
+func CreateCostPacket(order ChannelPacket, elevator *Elev) ChannelPacket {
+	packet := ChannelPacket{
+		PacketType: "cost",
+		Cost: CalculateCostFunction(*elevator, ChannelPacket{
+			Elevator:  order.Elevator,
+			Floor:     order.Floor,
+			Direction: order.Direction}),
+	}
+	return packet
 }
 
 func QueueFuncCountOrders(elevator Elev) int {
@@ -59,10 +87,10 @@ func QueueFuncOrdersBelowInQueue(elevator Elev) bool {
 	return false
 }
 
-func QueueFuncChooseDirection(elevator Elev) ElevDir{
+func QueueFuncChooseDirection(elevator Elev) ElevDir {
 	switch elevator.Dir {
 	case DirUp:
- 		if QueueFuncOrdersAboveInQueue(elevator) {
+		if QueueFuncOrdersAboveInQueue(elevator) {
 			return DirUp
 		} else if QueueFuncOrdersBelowInQueue(elevator) {
 			return DirDown
@@ -71,7 +99,7 @@ func QueueFuncChooseDirection(elevator Elev) ElevDir{
 		}
 	case DirDown:
 		if QueueFuncOrdersBelowInQueue(elevator) {
-			return DirDown 
+			return DirDown
 		} else if QueueFuncOrdersAboveInQueue(elevator) {
 			return DirUp
 		} else {
@@ -79,7 +107,7 @@ func QueueFuncChooseDirection(elevator Elev) ElevDir{
 		}
 	case DirStop:
 		if QueueFuncOrdersBelowInQueue(elevator) {
-			return DirDown 
+			return DirDown
 		} else if QueueFuncOrdersAboveInQueue(elevator) {
 			return DirUp
 		} else {
@@ -100,6 +128,6 @@ func QueueFuncShouldStop(elevator Elev) bool {
 			elevator.OrdersQueue[elevator.Floor][ButtonUp] ||
 			!QueueFuncOrdersAboveInQueue(elevator))
 	default:
-        return true
+		return true
 	}
 }

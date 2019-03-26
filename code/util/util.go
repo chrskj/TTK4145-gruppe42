@@ -14,17 +14,17 @@ type currentFloor int //stor bokstav
 type FSM_state int
 
 const ( //stor bokstav
-	Initialize    = 0
-	Idle          = 1
-	Running       = 2
-	DoorOpen      = 3
-	EmergencyStop = 4
+	Initialize = iota
+	Idle
+	Running
+	DoorOpen
+	EmergencyStop
 )
 
 type ElevDir int //for elevator IO use, not orders
 
 const (
-	DirDown ElevDir = iota - 1
+	DirDown ElevDir = iota
 	DirStop
 	DirUp
 )
@@ -46,16 +46,16 @@ type ChannelPacket struct {
 	OrderList  []ChannelPacket
 }
 
-type button int
+type Button int
 
 const ( //stor bokstav
-	ButtonDown button = 0
-	ButtonCab         = 1
-	ButtonUp          = 2
+	ButtonDown Button = iota
+	ButtonCab
+	ButtonUp
 )
 
 func ElevatorPrinter(elev Elev) {
-    fmt.Printf("State: ")
+	fmt.Printf("State: ")
 	switch elev.State {
 	case 0:
 		fmt.Printf("Initialize\t")
@@ -68,7 +68,7 @@ func ElevatorPrinter(elev Elev) {
 	case 4:
 		fmt.Printf("EmergencyStop\t")
 	}
-    fmt.Printf("| Current Direction: ")
+	fmt.Printf("| Current Direction: ")
 	switch elev.Dir {
 	case -1:
 		fmt.Printf("Going down...\t")
@@ -77,15 +77,15 @@ func ElevatorPrinter(elev Elev) {
 	case 1:
 		fmt.Printf("Going up...\t")
 	}
-    fmt.Printf("| Floor: %d\n", elev.Floor)
+	fmt.Printf("| Floor: %d\n", elev.Floor)
 	//fmt.Printf("%t\n", elev.OrdersQueue)
-    for i := 0; i < len(elev.OrdersQueue); i++ {
-        for j := 0; j < len(elev.OrdersQueue[0]); j++ {
-            fmt.Printf("%t\t", elev.OrdersQueue[i][j])
-        }
-        fmt.Printf("\n")
-    }
-    fmt.Printf("==========================================================\n")
+	for i := 0; i < len(elev.OrdersQueue); i++ {
+		for j := 0; j < len(elev.OrdersQueue[0]); j++ {
+			fmt.Printf("%t\t", elev.OrdersQueue[i][j])
+		}
+		fmt.Printf("\n")
+	}
+	fmt.Printf("==========================================================\n")
 }
 
 func DirBoolToInt(direction bool) ElevDir {
