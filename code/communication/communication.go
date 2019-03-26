@@ -9,21 +9,26 @@ package communication
 import (
 	"fmt"
 	"time"
-
 	//"strconv"
 	"../network/bcast"
 	"../network/peers"
 	. "../util"
 )
 
-func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket, id int) {
+func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
+        id int) {
+
 	sendMessage := make(chan ChannelPacket)
 	go bcast.Transmitter(16570, sendMessage)
+
 	receiveMessage := make(chan ChannelPacket)
 	go bcast.Receiver(16570, receiveMessage)
 
-	//go SendHeartbeat(strconv.Itoa(id))
-	//go ReceiveHeartbeat()
+    peerTxEnable := make(chan bool)
+	go peers.Transmitter(16569, strconv.Itoa(id), peerTxEnable)
+
+	peerUpdateCh := make(chan peers.PeerUpdate)
+	go peers.Receiver(16569, peerUpdateCh)
 
 	idPacket := ChannelPacket{
 		PacketType: "elevID",
@@ -81,28 +86,14 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket, 
 			case "requestCostFunc":
 				toElevAlgo <- temp
 			}
-		default:
+		case temp := <-peerUpdateCh:
+			fmt.Printf("Peer update:\n")
+			fmt.Printf("  Peers:    %q\n", temp.Peers)
+			fmt.Printf("  New:      %q\n", temp.New)
+			fmt.Printf("  Lost:     %q\n", temp.Lost)
+        default:
 			fmt.Println("    .")
 			time.Sleep(time.Second)
-		}
-	}
-}
-
-func SendHeartbeat(id string) {
-	peerTxEnable := make(chan bool)
-	go peers.Transmitter(16569, id, peerTxEnable)
-}
-
-func ReceiveHeartbeat() {
-	peerUpdateCh := make(chan peers.PeerUpdate)
-	go peers.Receiver(16569, peerUpdateCh)
-	for {
-		select {
-		case p := <-peerUpdateCh:
-			fmt.Printf("Peer update:\n")
-			fmt.Printf("  Peers:    %q\n", p.Peers)
-			fmt.Printf("  New:      %q\n", p.New)
-			fmt.Printf("  Lost:     %q\n", p.Lost)
 		}
 	}
 }
