@@ -97,6 +97,7 @@ func costCompare(newOrder ChannelPacket, OrdersToElevAlgo, OrdersToCom, costChan
 	OrdersToCom <- ChannelPacket{
 		PacketType: "requestCostFunc",
 		Elevator:   thisElevator,
+		Floor:      newOrder.Floor,
 	}
 	//costTicker := time.NewTicker(10 * time.Millisecond)
 	tttimer := time.NewTimer(5 * time.Second)
@@ -131,12 +132,16 @@ func costCompare(newOrder ChannelPacket, OrdersToElevAlgo, OrdersToCom, costChan
 		fmt.Println("timed out on cost compare")
 	}
 	max := 9999.0
+	fmt.Printf("-+-+-+-+--+-+-++-+-+--+-+-+-++--+-+-+-++--+-+-+-++\n")
 	for _, val := range costs {
+		fmt.Printf("The cost function of elevator %d is %f\n",
+			val.Elevator, val.Cost)
 		if val.Cost < max {
 			max = val.Cost
 			newOrder.Elevator = val.Elevator
 		}
 	}
+	fmt.Printf("-+-+-+-+--+-+-++-+-+--+-+-+-++--+-+-+-++--+-+-+-++\n")
 	if newOrder.Elevator != -1 {
 		addOrder(newOrder)
 		temp := newOrder

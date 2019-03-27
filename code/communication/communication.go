@@ -84,6 +84,7 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 			case "orderComplete":
 				toOrders <- temp
 			case "requestCostFunc":
+				fmt.Printf("We have the value: %d\n", temp.Floor)
 				toElevAlgo <- temp
 			}
 		case temp := <-peerUpdateCh:
