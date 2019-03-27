@@ -9,7 +9,7 @@ package communication
 import (
 	"fmt"
 	"strconv"
-	"time"
+
 	"../network/bcast"
 	"../network/peers"
 	. "../util"
@@ -92,8 +92,6 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 			fmt.Printf("  New:      %q\n", temp.New)
 			fmt.Printf("  Lost:     %q\n", temp.Lost)
 		default:
-			fmt.Println("    .")
-			time.Sleep(time.Second)
 		}
 	}
 }

@@ -1,11 +1,12 @@
 package peers
 
 import (
-    "../conn"
 	"fmt"
 	"net"
 	"sort"
 	"time"
+
+	"../conn"
 )
 
 type PeerUpdate struct {
@@ -14,8 +15,8 @@ type PeerUpdate struct {
 	Lost  []string
 }
 
-const interval = 15 * time.Millisecond
-const timeout = 50 * time.Millisecond
+const interval = 30 * time.Millisecond
+const timeout = 3 * time.Second
 
 func Transmitter(port int, id string, transmitEnable <-chan bool) {
 
@@ -58,7 +59,9 @@ func Receiver(port int, peerUpdateCh chan<- PeerUpdate) {
 				updated = true
 			}
 
+			//fmt.Printf("Updating %s\n", id)
 			lastSeen[id] = time.Now()
+			//fmt.Printf("%d\n", lastSeen)
 		}
 
 		// Removing dead connection
