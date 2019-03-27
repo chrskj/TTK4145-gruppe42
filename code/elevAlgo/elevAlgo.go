@@ -28,7 +28,7 @@ func InitElev(elevPort string) {
 
 }
 
-func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
+func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo,
 	ElevAlgoToCom chan ChannelPacket, elevPort string) {
 	InitElev(elevPort)
 	SetMotorDirection(MD_Up)
@@ -43,7 +43,6 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 	engineWatchDog := w.New(3 * time.Second)
 	engineWatchDog.Reset()
 	engineWatchDog.Stop()
-
 	//Start timers
 	doorTimer := time.NewTimer(3 * time.Second)
 	doorTimer.Stop()
@@ -61,28 +60,14 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 	for {
 		ElevatorPrinter(elevator)
 		select {
-		case a := <-OrdersToElevAlgo: //recieves a new ordre from orders
-			fmt.Printf("Entering OrdersToElevAlgo\n Setting order\n")
-			SetOrder(a.Direction, int(a.Floor), elevatorPtr)
-			//sette igang hvis samme etasje
-			if a.Floor == elevator.Floor {
-				go func() { drv_floors <- int(a.Floor) }()
-			}
-
 		case a := <-ComToElevAlgo:
-
 			fmt.Printf("Entering ComToElevAlgo\n")
 			switch a.PacketType {
 			case "newOrder":
-				fmt.Printf("Got new order from comm\n")
+				fmt.Printf("Got new order from comm, printing packet\n")
 				fmt.Println(a)
-				if a.Direction {
-					elevator.OrdersQueue[a.Floor][ButtonUp] = true
-					SetButtonLamp(BT_HallUp, int(a.Floor), true)
-				} else {
-					elevator.OrdersQueue[a.Floor][ButtonDown] = true
-					SetButtonLamp(BT_HallDown, int(a.Floor), true)
-				}
+				fmt.Printf("Setting order...\n")
+				SetOrder(a.Direction, int(a.Floor), elevatorPtr)
 				if elevator.State == Idle {
 					elevator.Dir = QueueFuncChooseDirection(elevator)
 					if elevator.Dir == DirDown {

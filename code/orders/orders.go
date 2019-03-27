@@ -32,14 +32,13 @@ var data []ChannelPacket
 var localOrders [2][]ChannelPacket
 var comparing bool = false
 
-func InitOrders(OrdersToCom, ComToOrders, OrdersToElevAlgo,
-	ElevAlgoToOrders chan ChannelPacket) {
+func InitOrders(OrdersToCom, ComToOrders, ElevAlgoToOrders chan ChannelPacket) {
 	//try to get data from others
 
-	go orderRoutine(OrdersToCom, ComToOrders, OrdersToElevAlgo, ElevAlgoToOrders)
+	go orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders)
 }
 
-func orderRoutine(OrdersToCom chan ChannelPacket, ComToOrders chan ChannelPacket, OrdersToElevAlgo chan ChannelPacket, ElevAlgoToOrders chan ChannelPacket) {
+func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders chan ChannelPacket) {
 	costChan := make(chan ChannelPacket)
 	for {
 		select {
@@ -86,14 +85,14 @@ func orderRoutine(OrdersToCom chan ChannelPacket, ComToOrders chan ChannelPacket
 				}
 				//if not: start the cost compare
 				if newOrder.Timestamp > 0 {
-					go costCompare(newOrder, OrdersToElevAlgo, OrdersToCom, costChan)
+					go costCompare(newOrder, OrdersToCom, costChan)
 				}
 			}
 		}
 	}
 }
 
-func costCompare(newOrder ChannelPacket, OrdersToElevAlgo, OrdersToCom, costChan chan ChannelPacket) {
+func costCompare(newOrder ChannelPacket, OrdersToCom, costChan chan ChannelPacket) {
 	comparing = true
 	OrdersToCom <- ChannelPacket{
 		PacketType: "requestCostFunc",
