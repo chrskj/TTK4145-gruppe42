@@ -79,11 +79,8 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 			case "cost":
 				toOrders <- temp
 			case "orderComplete":
-				fmt.Println("Sending to Orders")
 				toOrders <- temp
-				fmt.Println("Done sending to Orders, sending to ElevAlgo")
 				toElevAlgo <- temp
-				fmt.Println("Done sending to ElevAlgo")
 			case "requestCostFunc":
 				toElevAlgo <- temp
 			}

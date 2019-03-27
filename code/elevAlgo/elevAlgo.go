@@ -104,9 +104,8 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo,
 				fmt.Println("turning on buttons")
 				SetButtonLamp(DirBoolToButtonType(a.Direction), int(a.Floor), true)
 			case "orderComplete":
-				fmt.Println("turning off buttons")
+				fmt.Println(a)
 				SetButtonLamp(DirBoolToButtonType(a.Direction), int(a.Floor), false)
-				fmt.Println("turned off buttons")
 			}
 
 		case a := <-drv_buttons:
