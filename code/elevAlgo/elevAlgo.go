@@ -108,6 +108,13 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 				Floor:      int64(a.Floor),
 			}
 			if a.Floor == int(elevator.Floor) {
+				if a.Button = BT_HallUp{
+					elevator.OrdersQueue[a.Floor][ButtonUp]=true
+				}else if a.button = BT_HallDown{
+					elevator.OrdersQueue[a.Floor][ButtonDown]=true
+				}else{
+					elevator.OrdersQueue[a.Floor][ButtonCab]=true
+				}
 				go func() { drv_floors <- a.Floor }()
 			} else {
 				if a.Button == BT_HallUp {
