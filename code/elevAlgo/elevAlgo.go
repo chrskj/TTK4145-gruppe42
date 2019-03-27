@@ -32,7 +32,6 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo,
 	ElevAlgoToCom chan ChannelPacket, elevPort string) {
 	InitElev(elevPort)
 	SetMotorDirection(MD_Up)
-
 	elevator := Elev{
 		State:       Idle,
 		Dir:         DirUp,
@@ -56,6 +55,31 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo,
 	go PollButtons(drv_buttons)
 	go PollFloorSensor(drv_floors)
 	//elevFSM.FSMinit()
+	var ElevGoDirection = func(elevator Elev) string {
+		if elevator.Dir == DirDown {
+			SetMotorDirection(MD_Down)
+			engineWatchDog.Reset()
+			elevator.State = Running
+			return "Doing next order in queue, going down"
+		} else if elevator.Dir == DirUp {
+			SetMotorDirection(MD_Up)
+			engineWatchDog.Reset()
+			elevator.State = Running
+			return "Doing next order in queue, going up"
+		} else if elevator.Dir == DirStop {
+			return "No orders in queue"
+		} else {
+			return "elevator.Dir out of bounds"
+		}
+	}
+	var IdleCheck = func() string {
+		if elevator.State == Idle {
+			elevator.Dir = QueueFuncChooseDirection(elevator)
+			return ElevGoDirection(elevator)
+		} else {
+			return "Elevator not idle, continuing on queue"
+		}
+	}
 
 	for {
 		ElevatorPrinter(elevator)
@@ -70,20 +94,7 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo,
 					go func() { drv_floors <- int(a.Floor) }()
 				}
 				SetOrder(a.Direction, int(a.Floor), elevatorPtr)
-				if elevator.State == Idle {
-					elevator.Dir = QueueFuncChooseDirection(elevator)
-					if elevator.Dir == DirDown {
-						SetMotorDirection(MD_Down)
-						engineWatchDog.Reset()
-						elevator.State = Running
-					} else if elevator.Dir == DirUp {
-						SetMotorDirection(MD_Up)
-						engineWatchDog.Reset()
-						elevator.State = Running
-					} else {
-						fmt.Printf("Dafuq?")
-					}
-				}
+				fmt.Printf("%s\n", IdleCheck())
 			case "requestCostFunc":
 				fmt.Printf("Entering ComToElevAlgo\n Responding cost function \n")
 				go func(ElevAlgoToCom chan ChannelPacket) {
@@ -118,20 +129,7 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo,
 					elevator.OrdersQueue[a.Floor][ButtonCab] = true
 					SetButtonLamp(a.Button, a.Floor, true)
 
-					if elevator.State == Idle {
-						elevator.Dir = QueueFuncChooseDirection(elevator)
-						if elevator.Dir == DirDown {
-							SetMotorDirection(MD_Down)
-							engineWatchDog.Reset()
-							elevator.State = Running
-						} else if elevator.Dir == DirUp {
-							SetMotorDirection(MD_Up)
-							engineWatchDog.Reset()
-							elevator.State = Running
-						} else {
-							fmt.Println("I prefer just chillin' here for a while if you don't mind")
-						}
-					}
+					fmt.Println(IdleCheck())
 				}
 			}
 		case a := <-drv_floors:
