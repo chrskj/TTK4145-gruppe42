@@ -30,6 +30,18 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 	peerUpdateCh := make(chan peers.PeerUpdate)
 	go peers.Receiver(16569, peerUpdateCh)
 
+	go func() {
+		for {
+			select {
+			case temp := <-peerUpdateCh:
+				fmt.Printf("Peer update:\n")
+				fmt.Printf("  Peers:    %q\n", temp.Peers)
+				fmt.Printf("  New:      %q\n", temp.New)
+				fmt.Printf("  Lost:     %q\n", temp.Lost)
+			}
+		}
+	}()
+
 	idPacket := ChannelPacket{
 		PacketType: "elevID",
 		Elevator:   id,
@@ -86,11 +98,6 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 			case "requestCostFunc":
 				toElevAlgo <- temp
 			}
-		case temp := <-peerUpdateCh:
-			fmt.Printf("Peer update:\n")
-			fmt.Printf("  Peers:    %q\n", temp.Peers)
-			fmt.Printf("  New:      %q\n", temp.New)
-			fmt.Printf("  Lost:     %q\n", temp.Lost)
 		default:
 		}
 	}
