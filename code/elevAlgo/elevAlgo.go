@@ -66,7 +66,9 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo,
 			case "newOrder":
 				fmt.Printf("Got new order from comm, printing packet\n")
 				fmt.Println(a)
-				fmt.Printf("Setting order...\n")
+				if a.Floor == elevator.Floor {
+					go func() { drv_floors <- int(a.Floor) }()
+				}
 				SetOrder(a.Direction, int(a.Floor), elevatorPtr)
 				if elevator.State == Idle {
 					elevator.Dir = QueueFuncChooseDirection(elevator)
