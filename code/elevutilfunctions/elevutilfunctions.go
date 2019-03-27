@@ -11,21 +11,23 @@ import (
 
 func CalculateCostFunction(elevator Elev, order ChannelPacket) float64 {
 	var cost float64
-	//if order.Direction != elevator.Dir {
+	//if order.Dir != elevator.Dir {
 	//	cost = cost + 2
 	//}
 	switch elevator.State {
 	case Idle:
 		return math.Abs(float64(order.Floor - elevator.Floor))
 	case Running: //Checks if the elevator is on it's way towards the potential new order
-		if ((elevator.Direction==2) && (order.Floor - elevator.Floor)>0)||((elevator.Direction==0) && (order.Floor - elevator.Floor)<0){
-			return math.Abs(float64(order.Floor - elevator.Floor))+0.5*QueueFuncCountOrders(elevator)
-		} else if ((elevator.Direction==0) && (order.Floor - elevator.Floor)>0)||((elevator.Direction==2) && (order.Floor - elevator.Floor)<0)){
-			return float64(2*NumFloors-elevator.Floor-Order.floor-2)+0.5*QueueFuncCountOrders(elevator)
+		if (elevator.Dir==2 && (order.Floor - elevator.Floor>0)) ||
+                (elevator.Dir==0 && (order.Floor - elevator.Floor)<0) {
+			return math.Abs(float64(order.Floor - elevator.Floor))+0.5*
+                    float64(QueueFuncCountOrders(elevator))
+		} else if (elevator.Dir==0 && (order.Floor - elevator.Floor)>0) ||
+                (elevator.Dir==2 && (order.Floor - elevator.Floor)<0) {
+			return float64(2*NumFloors-elevator.Floor-order.Floor-2)+0.5*
+                    float64(QueueFuncCountOrders(elevator))
 		}
 	case DoorOpen:
-		
-
 	}
 	return float64(QueueFuncCountOrders(elevator)) + cost
 }
