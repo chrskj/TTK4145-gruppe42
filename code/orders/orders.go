@@ -135,12 +135,8 @@ func costCompare(newOrder ChannelPacket, OrdersToElevAlgo, OrdersToCom, costChan
 	max := 9999.0
 	fmt.Printf("-+-+-+-+--+-+-++-+-+--+-+-+-++--+-+-+-++--+-+-+-++\n")
 	for _, val := range costs {
-<<<<<<< HEAD
 		fmt.Printf("The cost function of elevator %d is %f\n",
 			val.Elevator, val.Cost)
-=======
-		fmt.Printf("The cost function of elevator %d is %d", val.Cost, val.Elevator)
->>>>>>> 661181a00b56b70de672f24c6f1ecfb89b731c1b
 		if val.Cost < max {
 			max = val.Cost
 			newOrder.Elevator = val.Elevator

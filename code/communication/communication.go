@@ -40,11 +40,8 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 	for {
 		select {
 		case temp := <-fromElevAlgo:
-			//assume packet type "cost"
 			fmt.Printf("Comm Recieved packet of type %s from ElevAlgo\n", temp.PacketType)
-			// Skal begge meldinger sendes over nettet? (cost & ordersComplete)
 			temp.Elevator = id
-			toOrders <- temp
 			sendMessage <- temp
 		case temp := <-fromOrders:
 			fmt.Printf("Comm Recieved packet of type %s from Orders\n", temp.PacketType)
@@ -52,18 +49,15 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 			case "requestCostFunc":
 				sendMessage <- temp
 			case "getOrderList":
-				// Hva må gjøres her?
 				sendMessage <- temp
 			case "newOrder":
 				fmt.Printf("newOrder.Elevator = %d\n", temp.Elevator)
-				// Hva må gjøres her?
 				if temp.Elevator == id {
 					toElevAlgo <- temp
 				} else {
 					sendMessage <- temp
 				}
 			case "orderList":
-				// Hva må gjøres her?
 				sendMessage <- temp
 			}
 		case temp := <-receiveMessage:
@@ -84,7 +78,6 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 			case "orderComplete":
 				toOrders <- temp
 			case "requestCostFunc":
-				fmt.Printf("We have the value: %d\n", temp.Floor)
 				toElevAlgo <- temp
 			}
 		case temp := <-peerUpdateCh:
