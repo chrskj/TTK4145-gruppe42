@@ -9,9 +9,6 @@ import (
 
 func CalculateCostFunction(elevator Elev, order ChannelPacket) float64 {
 	var cost float64
-	//if order.Dir != elevator.Dir {
-	//	cost = cost + 2
-	//}
 	switch elevator.State {
 	case Idle:
 		return math.Abs(float64(order.Floor - elevator.Floor))
@@ -38,12 +35,6 @@ func CalculateCostFunction(elevator Elev, order ChannelPacket) float64 {
 	}
 	return float64(QueueFuncCountOrders(elevator)) + cost
 }
-
-/*func OpenDoor(elevator *Elev, doorTimer **time.Timer) {
-	doorTimer..Reset(3 * time.Second) //begin 3 seconds of waiting for people to enter and leave car
-	SetDoorOpenLamp(true)
-	elevator.State = DoorOpen
-}*/
 
 func SetOrder(direction bool, floor int, elevator *Elev) {
 	if direction {

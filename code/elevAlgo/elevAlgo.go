@@ -107,32 +107,32 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 				PacketType: "buttonPress",
 				Floor:      int64(a.Floor),
 			}
-			if a.Button == BT_HallUp {
-				NewOrder.Direction = true
-				ElevAlgoToOrders <- NewOrder
-			} else if a.Button == BT_HallDown {
-				NewOrder.Direction = false
-				ElevAlgoToOrders <- NewOrder
+			if a.Floor == int(elevator.Floor) {
+				go func() { drv_floors <- a.Floor }()
 			} else {
-				elevator.OrdersQueue[a.Floor][ButtonCab] = true
-				SetButtonLamp(a.Button, a.Floor, true)
+				if a.Button == BT_HallUp {
+					NewOrder.Direction = true
+					ElevAlgoToOrders <- NewOrder
+				} else if a.Button == BT_HallDown {
+					NewOrder.Direction = false
+					ElevAlgoToOrders <- NewOrder
+				} else {
+					elevator.OrdersQueue[a.Floor][ButtonCab] = true
+					SetButtonLamp(a.Button, a.Floor, true)
 
-				if a.Floor == int(elevator.Floor) {
-					go func() { drv_floors <- a.Floor }()
-				}
-
-				if elevator.State == Idle {
-					elevator.Dir = QueueFuncChooseDirection(elevator)
-					if elevator.Dir == DirDown {
-						SetMotorDirection(MD_Down)
-						engineWatchDog.Reset()
-						elevator.State = Running
-					} else if elevator.Dir == DirUp {
-						SetMotorDirection(MD_Up)
-						engineWatchDog.Reset()
-						elevator.State = Running
-					} else {
-						fmt.Println("I prefer just chillin' here for a while if you don't mind")
+					if elevator.State == Idle {
+						elevator.Dir = QueueFuncChooseDirection(elevator)
+						if elevator.Dir == DirDown {
+							SetMotorDirection(MD_Down)
+							engineWatchDog.Reset()
+							elevator.State = Running
+						} else if elevator.Dir == DirUp {
+							SetMotorDirection(MD_Up)
+							engineWatchDog.Reset()
+							elevator.State = Running
+						} else {
+							fmt.Println("I prefer just chillin' here for a while if you don't mind")
+						}
 					}
 				}
 			}
