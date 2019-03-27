@@ -2,4 +2,5 @@
 Heislab-prosjekt i faget TTK4145: Sanntidsprogrammering
 
 ## Todo
-Lage alt
+-Bug: henger seg når mange ordre
+-De andre heisene må ta over ordrene hvis en heis konker ut
