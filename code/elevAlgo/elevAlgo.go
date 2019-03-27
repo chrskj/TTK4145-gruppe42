@@ -64,6 +64,10 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 		case a := <-OrdersToElevAlgo: //recieves a new ordre from orders
 			fmt.Printf("Entering OrdersToElevAlgo\n Setting order\n")
 			SetOrder(a.Direction, int(a.Floor), elevatorPtr)
+			//sette igang hvis samme etasje
+			if a.Floor == elevator.Floor {
+				go func() { drv_floors <- int(a.Floor) }()
+			}
 
 		case a := <-ComToElevAlgo:
 
@@ -108,12 +112,12 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 				Floor:      int64(a.Floor),
 			}
 			if a.Floor == int(elevator.Floor) {
-				if a.Button = BT_HallUp{
-					elevator.OrdersQueue[a.Floor][ButtonUp]=true
-				}else if a.button = BT_HallDown{
-					elevator.OrdersQueue[a.Floor][ButtonDown]=true
-				}else{
-					elevator.OrdersQueue[a.Floor][ButtonCab]=true
+				if a.Button == BT_HallUp {
+					elevator.OrdersQueue[a.Floor][ButtonUp] = true
+				} else if a.Button == BT_HallDown {
+					elevator.OrdersQueue[a.Floor][ButtonDown] = true
+				} else {
+					elevator.OrdersQueue[a.Floor][ButtonCab] = true
 				}
 				go func() { drv_floors <- a.Floor }()
 			} else {
