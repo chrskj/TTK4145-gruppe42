@@ -165,7 +165,7 @@ func costCompare(newOrder ChannelPacket, OrdersToCom, costChan chan ChannelPacke
 }
 
 func readFile() {
-	file, err := os.Open("orders.csv")
+	file, err := os.Open(fmt.Sprintf("orders%d.csv", thisElevator))
 	checkError("Cannot create file", err)
 	defer file.Close()
 
@@ -203,7 +203,7 @@ func writeToFile() {
 	fmt.Println("before write")
 	if len(localOrders) > 0 {
 
-		file, err := os.Create("orders.csv")
+		file, err := os.Create(fmt.Sprintf("orders%d.csv", thisElevator))
 		checkError("Cannot create file", err)
 		defer file.Close()
 		writer := csv.NewWriter(file)
