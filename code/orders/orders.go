@@ -10,7 +10,8 @@
 
 //ta imot alle andres ordre fra komm, og vurdere hva som er nye ordre, og hva som er ferdige ordre (og da slette)
 
-//comment
+//Hvor lagres alle de andre heisene sine ordre?
+//Når leses det fra fil for å hente gamle ordre?
 package orders
 
 import (
@@ -71,7 +72,7 @@ func orderRoutine(OrdersToCom chan ChannelPacket, ComToOrders chan ChannelPacket
 			case "buttonPress":
 				fmt.Println("Orders recieved " + temp.PacketType + " from elevAlgo")
 				newOrder := ChannelPacket{
-					Elevator:  -1,
+					Elevator:  -1, //Skal det ikke være heisens ID her?
 					Floor:     temp.Floor,
 					Direction: temp.Direction,
 					Timestamp: uint64(time.Now().UnixNano()),
@@ -134,8 +135,12 @@ func costCompare(newOrder ChannelPacket, OrdersToElevAlgo, OrdersToCom, costChan
 	max := 9999.0
 	fmt.Printf("-+-+-+-+--+-+-++-+-+--+-+-+-++--+-+-+-++--+-+-+-++\n")
 	for _, val := range costs {
+<<<<<<< HEAD
 		fmt.Printf("The cost function of elevator %d is %f\n",
 			val.Elevator, val.Cost)
+=======
+		fmt.Printf("The cost function of elevator %d is %d", val.Cost, val.Elevator)
+>>>>>>> 661181a00b56b70de672f24c6f1ecfb89b731c1b
 		if val.Cost < max {
 			max = val.Cost
 			newOrder.Elevator = val.Elevator
