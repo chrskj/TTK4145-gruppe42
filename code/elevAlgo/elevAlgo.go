@@ -101,10 +101,8 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo,
 					ElevAlgoToCom <- CreateCostPacket(a, elevatorPtr)
 				}(ElevAlgoToCom) //ble tidligere stuck her, bør kanskje endre
 			case "otherOrder":
-				fmt.Println("turning on buttons")
 				SetButtonLamp(DirBoolToButtonType(a.Direction), int(a.Floor), true)
 			case "orderComplete":
-				fmt.Println(a)
 				SetButtonLamp(BT_HallDown, int(a.Floor), false)
 				SetButtonLamp(BT_HallUp, int(a.Floor), false)
 			}
