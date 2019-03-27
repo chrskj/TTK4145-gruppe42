@@ -54,6 +54,7 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 				fmt.Printf("newOrder.Elevator = %d\n", temp.Elevator)
 				if temp.Elevator == id {
 					toElevAlgo <- temp
+					sendMessage <- temp
 				} else {
 					sendMessage <- temp
 				}
@@ -68,6 +69,8 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 					toElevAlgo <- temp
 				} else {
 					toOrders <- temp
+					temp.PacketType = "otherOrder"
+					toElevAlgo <- temp
 				}
 			case "orderList":
 				toOrders <- temp
@@ -76,7 +79,11 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 			case "cost":
 				toOrders <- temp
 			case "orderComplete":
+				fmt.Println("Sending to Orders")
 				toOrders <- temp
+				fmt.Println("Done sending to Orders, sending to ElevAlgo")
+				toElevAlgo <- temp
+				fmt.Println("Done sending to ElevAlgo")
 			case "requestCostFunc":
 				toElevAlgo <- temp
 			}

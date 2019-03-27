@@ -145,3 +145,11 @@ func QueueFuncShouldStop(elevator Elev) bool {
 		return true
 	}
 }
+
+func DirBoolToButtonType(direction bool) ButtonType {
+	if direction { //if up
+		return BT_HallUp
+	} else { //if down
+		return BT_HallDown
+	}
+}

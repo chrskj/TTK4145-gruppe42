@@ -100,6 +100,13 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo,
 				go func(ElevAlgoToCom chan ChannelPacket) {
 					ElevAlgoToCom <- CreateCostPacket(a, elevatorPtr)
 				}(ElevAlgoToCom) //ble tidligere stuck her, bør kanskje endre
+			case "otherOrder":
+				fmt.Println("turning on buttons")
+				SetButtonLamp(DirBoolToButtonType(a.Direction), int(a.Floor), true)
+			case "orderComplete":
+				fmt.Println("turning off buttons")
+				SetButtonLamp(DirBoolToButtonType(a.Direction), int(a.Floor), false)
+				fmt.Println("turned off buttons")
 			}
 
 		case a := <-drv_buttons:
@@ -144,7 +151,7 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo,
 				engineWatchDog.Stop()
 				ClearOrders(a, &elevator)
 				packet := ChannelPacket{
-					PacketType: "OrderComplete",
+					PacketType: "orderComplete",
 					Floor:      elevator.Floor,
 					Direction:  DirIntToBool(elevator.Dir),
 					Timestamp:  uint64(time.Now().UnixNano()),
