@@ -56,7 +56,6 @@ func ElevStateMachine(OrdersToElevAlgo, ElevAlgoToOrders, ComToElevAlgo,
 	//Start polling
 	go PollButtons(drv_buttons)
 	go PollFloorSensor(drv_floors)
-	//elevFSM.FSMinit()
 
 	for {
 		ElevatorPrinter(elevator)
