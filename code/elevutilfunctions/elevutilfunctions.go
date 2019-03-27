@@ -7,8 +7,6 @@ import (
 	. "../util"
 )
 
-//stor bokstav på ALT !!
-
 func CalculateCostFunction(elevator Elev, order ChannelPacket) float64 {
 	var cost float64
 	//if order.Dir != elevator.Dir {
@@ -18,16 +16,25 @@ func CalculateCostFunction(elevator Elev, order ChannelPacket) float64 {
 	case Idle:
 		return math.Abs(float64(order.Floor - elevator.Floor))
 	case Running: //Checks if the elevator is on it's way towards the potential new order
-		if (elevator.Dir==2 && (order.Floor - elevator.Floor>0)) ||
-                (elevator.Dir==0 && (order.Floor - elevator.Floor)<0) {
-			return math.Abs(float64(order.Floor - elevator.Floor))+0.5*
-                    float64(QueueFuncCountOrders(elevator))
-		} else if (elevator.Dir==0 && (order.Floor - elevator.Floor)>0) ||
-                (elevator.Dir==2 && (order.Floor - elevator.Floor)<0) {
-			return float64(2*NumFloors-elevator.Floor-order.Floor-2)+0.5*
-                    float64(QueueFuncCountOrders(elevator))
+		if (elevator.Dir == 2 && (order.Floor-elevator.Floor > 0)) ||
+			(elevator.Dir == 0 && (order.Floor-elevator.Floor) < 0) {
+			return math.Abs(float64(order.Floor-elevator.Floor)) + 0.5*
+				float64(QueueFuncCountOrders(elevator))
+		} else if (elevator.Dir == 0 && (order.Floor-elevator.Floor) > 0) ||
+			(elevator.Dir == 2 && (order.Floor-elevator.Floor) < 0) {
+			return float64(2*NumFloors-elevator.Floor-order.Floor-2) + 0.5*
+				float64(QueueFuncCountOrders(elevator))
 		}
 	case DoorOpen:
+		if (elevator.Dir == 2 && (order.Floor-elevator.Floor > 0)) ||
+			(elevator.Dir == 0 && (order.Floor-elevator.Floor) < 0) {
+			return math.Abs(float64(order.Floor-elevator.Floor)) + 0.5*
+				float64(QueueFuncCountOrders(elevator))
+		} else if (elevator.Dir == 0 && (order.Floor-elevator.Floor) > 0) ||
+			(elevator.Dir == 2 && (order.Floor-elevator.Floor) < 0) {
+			return float64(2*NumFloors-elevator.Floor-order.Floor-2) + 0.5*
+				float64(QueueFuncCountOrders(elevator))
+		}
 	}
 	return float64(QueueFuncCountOrders(elevator)) + cost
 }
