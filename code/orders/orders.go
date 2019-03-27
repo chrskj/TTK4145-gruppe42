@@ -33,7 +33,11 @@ var localOrders [2][]ChannelPacket
 var comparing bool = false
 
 func InitOrders(OrdersToCom, ComToOrders, ElevAlgoToOrders chan ChannelPacket) {
-	//try to get data from others
+	readFile()
+	OrdersToCom <- ChannelPacket{
+		PacketType: "getOrderList",
+		Elevator:   thisElevator,
+	}
 
 	go orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders)
 }
@@ -65,6 +69,13 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders chan ChannelPacket)
 				OrdersToCom <- packet
 			case "orderList":
 				data = temp.OrderList
+				var locOrdersTemp []ChannelPacket
+				for _, val := range data {
+					if val.Elevator == thisElevator {
+						locOrdersTemp = append(locOrdersTemp, val)
+					}
+				}
+				localOrders[0] = locOrdersTemp
 			}
 		case temp := <-ElevAlgoToOrders:
 			switch temp.PacketType {
@@ -223,8 +234,10 @@ func addOrder(newOrder ChannelPacket) {
 	data = append(data, newOrder)
 	if newOrder.Elevator == thisElevator {
 		localOrders[0] = append(localOrders[0], newOrder)
+		writeToFile()
 	} else if newOrder.Elevator == 0 {
 		localOrders[1] = append(localOrders[1], newOrder)
+		writeToFile()
 	}
 }
 

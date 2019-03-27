@@ -153,3 +153,11 @@ func DirBoolToButtonType(direction bool) ButtonType {
 		return BT_HallDown
 	}
 }
+
+func DirButtonTypeToBool(direction ButtonType) bool {
+	if direction == BT_HallUp { //if up
+		return true
+	} else { //if down
+		return false
+	}
+}

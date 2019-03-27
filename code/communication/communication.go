@@ -73,7 +73,9 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 					toElevAlgo <- temp
 				}
 			case "orderList":
-				toOrders <- temp
+				if temp.Elevator == id {
+					toOrders <- temp
+				}
 			case "getOrderList":
 				toOrders <- temp
 			case "cost":

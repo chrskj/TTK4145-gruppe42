@@ -124,17 +124,17 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo,
 				}
 				go func() { drv_floors <- a.Floor }()
 			} else {
-				if a.Button == BT_HallUp {
-					NewOrder.Direction = true
-					ElevAlgoToOrders <- NewOrder
-				} else if a.Button == BT_HallDown {
-					NewOrder.Direction = false
-					ElevAlgoToOrders <- NewOrder
-				} else {
+				if a.Button == BT_Cab {
 					elevator.OrdersQueue[a.Floor][ButtonCab] = true
 					SetButtonLamp(a.Button, a.Floor, true)
-
+					ElevAlgoToOrders <- ChannelPacket{
+						PacketType: "newOrder",
+						Floor:      int64(a.Floor),
+						Elevator:   0,
+					}
 					fmt.Println(IdleCheck())
+				} else {
+					SetOrder(DirButtonTypeToBool(a.Button), a.Floor, &elevator)
 				}
 			}
 		case a := <-drv_floors:
