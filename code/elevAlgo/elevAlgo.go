@@ -56,7 +56,7 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo, ElevAlgoToCom,
 	go PollButtons(drv_buttons)
 	go PollFloorSensor(drv_floors)
 	//elevFSM.FSMinit()
-	var ElevGoDirection = func(elevator Elev) string {
+	var ElevGoDirection = func(elevator *Elev) string {
 		if elevator.Dir == DirDown {
 			SetMotorDirection(MD_Down)
 			engineWatchDog.Reset()
@@ -68,6 +68,7 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo, ElevAlgoToCom,
 			elevator.State = Running
 			return "Doing next order in queue, going up"
 		} else if elevator.Dir == DirStop {
+			elevator.State = Idle
 			return "No orders in queue"
 		} else {
 			return "elevator.Dir out of bounds"
@@ -76,7 +77,7 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo, ElevAlgoToCom,
 	var IdleCheck = func() string {
 		if elevator.State == Idle {
 			elevator.Dir = QueueFuncChooseDirection(elevator)
-			return ElevGoDirection(elevator)
+			return ElevGoDirection(&elevator)
 		} else {
 			return "Elevator not idle, continuing on queue"
 		}
@@ -128,15 +129,23 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo, ElevAlgoToCom,
 				Floor:      int64(a.Floor),
 			}
 			if a.Floor == int(elevator.Floor) {
-				if a.Button == BT_HallUp {
-					elevator.OrdersQueue[a.Floor][ButtonUp] = true
-				} else if a.Button == BT_HallDown {
-					elevator.OrdersQueue[a.Floor][ButtonDown] = true
-				} else {
-					elevator.OrdersQueue[a.Floor][ButtonCab] = true
-				}
-				if elevator.State == Idle {
+				if elevator.State == Idle || elevator.State == DoorOpen{
 					go func() { drv_floors <- a.Floor }()
+				} else {
+					if a.Button == BT_Cab {
+						elevator.OrdersQueue[a.Floor][ButtonCab] = true
+						SetButtonLamp(a.Button, a.Floor, true)
+						ElevAlgoToOrders <- ChannelPacket{
+							PacketType: "newOrder",
+							Floor:      int64(a.Floor),
+							Elevator:   0,
+						}
+						fmt.Println(IdleCheck())
+					} else {
+						SetOrder(DirButtonTypeToBool(a.Button), a.Floor, &elevator)
+						NewOrder.Direction = DirButtonTypeToBool(a.Button)
+						ElevAlgoToOrders <- NewOrder
+					}
 				}
 
 			} else {

@@ -51,8 +51,7 @@ func main() {
 	go communication.InitCom(ComToElevAlgo, ComToOrders, ElevAlgoToCom,
 		OrdersToCom, elevID)
 
-	for {
-	}
+	for {}
 
 	//done
 }

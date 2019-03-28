@@ -64,6 +64,7 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 				toOrders <- msg
 			case "orderComplete":
 				toOrders <- msg
+				
 				toElevAlgo <- msg
 			case "requestCostFunc":
 				toElevAlgo <- msg
