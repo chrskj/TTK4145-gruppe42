@@ -58,11 +58,8 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 			//fmt.Printf("Comm Recieved packet of type %s from broadcast\n", msg.PacketType)
 			switch msg.PacketType {
 			case "newOrder":
-				if msg.Elevator == elevID {
-					toOrders <- msg
-				} else {
-					toOrders <- msg
-					msg.PacketType = "otherOrder"
+				toOrders <- msg
+				if msg.Elevator != elevID {
 					toElevAlgo <- msg
 				}
 			case "orderList":

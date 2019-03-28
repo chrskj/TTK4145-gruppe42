@@ -60,8 +60,18 @@ func InitOrders(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 
 func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 	OrdersToElevAlgo chan ChannelPacket) {
-
 	costChan := make(chan ChannelPacket)
+	var redistributeOrders = func() bool {
+		for len(localOrders[0]) > 0 {
+			if costCompare(localOrders[0][0], OrdersToCom, OrdersToElevAlgo, costChan) {
+				//order was assigned successfully
+				fmt.Printf("Order was assigned to elevator %d\n", data[len(data)-1])
+				removeOrder(localOrders[0][0])
+			}
+		}
+		return true
+	}
+
 	for {
 		select {
 		case temp := <-ComToOrders:
@@ -75,8 +85,12 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 			case "orderComplete":
 				removeOrder(temp)
 			case "newOrder":
-				fmt.Println("New order from comm")
-				addOrder(temp)
+				if temp.Elevator == thisElevator {
+					OrdersToElevAlgo <- temp
+					addOrder(temp)
+				} else {
+					addOrder(temp)
+				}
 			case "getOrderList":
 				packet := ChannelPacket{
 					PacketType: "orderList",
@@ -97,14 +111,7 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 				}
 			case "elevLost":
 				fmt.Printf("Recieved %s from comm. Redistributing orders", temp.PacketType)
-				fmt.Println(localOrders)
-				for len(localOrders[1]) > 0 {
-					localOrders[1][0].Elevator = -1
-					if costCompare(localOrders[1][0], OrdersToCom, costChan) { //order was assigned successfully
-						fmt.Printf("Order was assigned to elevator x\n")
-						removeOrder(localOrders[1][0])
-					}
-				}
+				redistributeOrders()
 			}
 		case temp := <-ElevAlgoToOrders:
 			switch temp.PacketType {
@@ -112,8 +119,7 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 				fmt.Println("New order from elevAlgo")
 				addOrder(temp)
 			case "buttonPress":
-				fmt.Println("Orders recieved " + temp.PacketType +
-					" from elevAlgo")
+				fmt.Println("Orders recieved " + temp.PacketType + " from elevAlgo")
 				newOrder := ChannelPacket{
 					Elevator:  -1, //Skal det ikke være heisens ID her?
 					Floor:     temp.Floor,
@@ -130,23 +136,17 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 				}
 				//if not: start the cost compare
 				if newOrder.Timestamp > 0 {
-					go costCompare(newOrder, OrdersToCom, costChan)
+					go costCompare(newOrder, OrdersToCom, OrdersToElevAlgo, costChan)
 				}
 			case "engineTimeOut":
 				fmt.Println("Motor has stopped. Redistributing orders")
-				for len(localOrders[1]) > 0 {
-					if costCompare(localOrders[1][0], OrdersToCom, costChan) {
-						//order was assigned successfully
-						fmt.Printf("Order was assigned to elevator %d\n")
-						removeOrder(localOrders[1][0])
-					}
-				}
+				redistributeOrders()
 			}
 		}
 	}
 }
 
-func costCompare(newOrder ChannelPacket, OrdersToCom,
+func costCompare(newOrder ChannelPacket, OrdersToCom, OrdersToElevAlgo,
 	costChan chan ChannelPacket) (returnVar bool) {
 	comparing = true
 	OrdersToCom <- ChannelPacket{
@@ -201,6 +201,9 @@ func costCompare(newOrder ChannelPacket, OrdersToCom,
 		temp := newOrder
 		temp.PacketType = "newOrder"
 		OrdersToCom <- temp
+		if newOrder.Elevator == thisElevator {
+			OrdersToElevAlgo <- temp
+		}
 		returnVar = true
 	} else {
 		returnVar = false
