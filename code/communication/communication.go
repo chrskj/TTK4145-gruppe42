@@ -7,12 +7,12 @@ package communication
 // - ta imot orders sin ordrelsite og sende ut
 
 import (
-	"fmt"
-	"strconv"
+
+	//"strconv"
 	"time"
 
 	"../network/bcast"
-	"../network/peers"
+	//"../network/peers"
 	. "../util"
 )
 
@@ -24,30 +24,31 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 
 	receiveMessage := make(chan ChannelPacket)
 	go bcast.Receiver(16570, receiveMessage)
+	/*
+		peerTxEnable := make(chan bool)
+		go peers.Transmitter(16569, strconv.Itoa(elevID), peerTxEnable)
 
-	peerTxEnable := make(chan bool)
-	go peers.Transmitter(16569, strconv.Itoa(elevID), peerTxEnable)
+		peerUpdateCh := make(chan peers.PeerUpdate)
+		go peers.Receiver(16569, peerUpdateCh)
 
-	peerUpdateCh := make(chan peers.PeerUpdate)
-	go peers.Receiver(16569, peerUpdateCh)
-
-	go func() {
-		msg := <-peerUpdateCh
-		for {
-			msg = <-peerUpdateCh
-			fmt.Printf("Peer update:\n")
-			fmt.Printf("  Peers:    %q\n", msg.Peers)
-			fmt.Printf("  New:      %q\n", msg.New)
-			fmt.Printf("  Lost:     %q\n", msg.Lost)
-			if len(msg.Lost) > 0 {
-				idLost, _ := strconv.Atoi(msg.Lost[0])
-				toOrders <- ChannelPacket{
-					PacketType: "elevLost",
-					Elevator:   idLost,
+		go func() {
+			msg := <-peerUpdateCh
+			for {
+				msg = <-peerUpdateCh
+				fmt.Printf("Peer update:\n")
+				fmt.Printf("  Peers:    %q\n", msg.Peers)
+				fmt.Printf("  New:      %q\n", msg.New)
+				fmt.Printf("  Lost:     %q\n", msg.Lost)
+				if len(msg.Lost) > 0 {
+					idLost, _ := strconv.Atoi(msg.Lost[0])
+					toOrders <- ChannelPacket{
+						PacketType: "elevLost",
+						Elevator:   idLost,
+					}
 				}
 			}
-		}
-	}()
+		}()
+	*/
 
 	//handShakeChan := make(chan ChannelPacket)
 
@@ -64,8 +65,8 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 			//fmt.Printf("Comm Recieved packet of type %s from broadcast\n", msg.PacketType)
 			switch msg.PacketType {
 			case "newOrder":
-				if lastrecieved[0] != msg.Timestamp {
-					lastrecieved[0] = msg.Timestamp
+				if lastRecieved[0] != msg.Timestamp {
+					lastRecieved[0] = msg.Timestamp
 					//start
 					toOrders <- msg
 					if msg.Elevator != elevID {
@@ -77,8 +78,8 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 				//msg.Elevator = elevID
 				//sendMessage <- msg
 			case "orderList":
-				if lastrecieved[1] != msg.Timestamp {
-					lastrecieved[1] = msg.Timestamp
+				if lastRecieved[1] != msg.Timestamp {
+					lastRecieved[1] = msg.Timestamp
 					//start
 					if msg.Elevator == elevID {
 						toOrders <- msg
@@ -86,23 +87,23 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 					//end
 				}
 			case "getOrderList":
-				if lastrecieved[2] != msg.Timestamp {
-					lastrecieved[2] = msg.Timestamp
+				if lastRecieved[2] != msg.Timestamp {
+					lastRecieved[2] = msg.Timestamp
 					//start
 					toOrders <- msg
 					//end
 				}
 			case "cost":
-				if lastrecieved[3] != msg.Timestamp {
-					lastrecieved[3] = msg.Timestamp
+				if lastRecieved[3] != msg.Timestamp {
+					lastRecieved[3] = msg.Timestamp
 					//start
 					toOrders <- msg
 					//end
 				}
 
 			case "orderComplete":
-				if lastrecieved[4] != msg.Timestamp {
-					lastrecieved[4] = msg.Timestamp
+				if lastRecieved[4] != msg.Timestamp {
+					lastRecieved[4] = msg.Timestamp
 					//start
 					toOrders <- msg
 					toElevAlgo <- msg
@@ -110,8 +111,8 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 				}
 
 			case "requestCostFunc":
-				if lastrecieved[5] != msg.Timestamp {
-					lastrecieved[5] = msg.Timestamp
+				if lastRecieved[5] != msg.Timestamp {
+					lastRecieved[5] = msg.Timestamp
 					//start
 					toElevAlgo <- msg
 					//end
