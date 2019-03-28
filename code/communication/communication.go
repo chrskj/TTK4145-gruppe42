@@ -41,13 +41,13 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 			}
 		}
 	}()
+	/*
+		idPacket := ChannelPacket{
+			PacketType: "elevID",
+			Elevator:   id,
+		}
 
-	idPacket := ChannelPacket{
-		PacketType: "elevID",
-		Elevator:   id,
-	}
-
-	toOrders <- idPacket
+	toOrders <- idPacket*/
 
 	for {
 		select {

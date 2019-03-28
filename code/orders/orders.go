@@ -32,7 +32,8 @@ var data []ChannelPacket
 var localOrders [2][]ChannelPacket
 var comparing bool = false
 
-func InitOrders(OrdersToCom, ComToOrders, ElevAlgoToOrders chan ChannelPacket) {
+func InitOrders(OrdersToCom, ComToOrders, ElevAlgoToOrders chan ChannelPacket, elevID int) {
+	thisElevator = elevID
 	readFile()
 	OrdersToCom <- ChannelPacket{
 		PacketType: "getOrderList",
@@ -48,9 +49,11 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders chan ChannelPacket)
 		select {
 		case temp := <-ComToOrders:
 			switch temp.PacketType {
-			case "elevID":
-				fmt.Println("Recieved Elevator ID")
-				thisElevator = temp.Elevator
+			/*
+				case "elevID":
+					fmt.Println("Recieved Elevator ID")
+					thisElevator = temp.Elevator
+			*/
 			case "cost":
 				if comparing {
 					fmt.Println("before where I think it stops")
@@ -166,35 +169,42 @@ func costCompare(newOrder ChannelPacket, OrdersToCom, costChan chan ChannelPacke
 
 func readFile() {
 	file, err := os.Open(fmt.Sprintf("orders%d.csv", thisElevator))
-	checkError("Cannot create file", err)
-	defer file.Close()
+	if err != nil {
+		file, err := os.Create(fmt.Sprintf("orders%d.csv", thisElevator))
+		checkError("Cannot create file", err)
+		writer := csv.NewWriter(file)
+		writer.Flush()
+		file.Close()
+	} else {
+		defer file.Close()
 
-	reader := csv.NewReader(file)
-	fmt.Println("before read")
-	for {
-		input, error := reader.Read()
-		if error == io.EOF {
-			break
-		}
-		FloorTemp, _ := strconv.ParseInt(input[0], 10, 64)
-		DirectionTemp, _ := strconv.ParseBool(input[1])
-		TimestampTemp, _ := strconv.ParseUint(input[2], 10, 64)
-		localOrders[0] = append(localOrders[0], ChannelPacket{
-			Elevator:  thisElevator,
-			Floor:     FloorTemp,
-			Direction: DirectionTemp,
-			Timestamp: TimestampTemp,
-		})
-		if len(input) > 3 {
-			FloorTemp, _ := strconv.ParseInt(input[3], 10, 64)
-			DirectionTemp, _ := strconv.ParseBool(input[4])
-			TimestampTemp, _ := strconv.ParseUint(input[5], 10, 64)
-			localOrders[1] = append(localOrders[1], ChannelPacket{
-				Elevator:  0,
+		reader := csv.NewReader(file)
+		fmt.Println("before read")
+		for {
+			input, error := reader.Read()
+			if error == io.EOF {
+				break
+			}
+			FloorTemp, _ := strconv.ParseInt(input[0], 10, 64)
+			DirectionTemp, _ := strconv.ParseBool(input[1])
+			TimestampTemp, _ := strconv.ParseUint(input[2], 10, 64)
+			localOrders[0] = append(localOrders[0], ChannelPacket{
+				Elevator:  thisElevator,
 				Floor:     FloorTemp,
 				Direction: DirectionTemp,
 				Timestamp: TimestampTemp,
 			})
+			if len(input) > 3 {
+				FloorTemp, _ := strconv.ParseInt(input[3], 10, 64)
+				DirectionTemp, _ := strconv.ParseBool(input[4])
+				TimestampTemp, _ := strconv.ParseUint(input[5], 10, 64)
+				localOrders[1] = append(localOrders[1], ChannelPacket{
+					Elevator:  0,
+					Floor:     FloorTemp,
+					Direction: DirectionTemp,
+					Timestamp: TimestampTemp,
+				})
+			}
 		}
 	}
 }
@@ -205,7 +215,7 @@ func writeToFile() {
 
 		file, err := os.Create(fmt.Sprintf("orders%d.csv", thisElevator))
 		checkError("Cannot create file", err)
-		defer file.Close()
+		file.Close()
 		writer := csv.NewWriter(file)
 		defer writer.Flush()
 		length := len(localOrders[0])
