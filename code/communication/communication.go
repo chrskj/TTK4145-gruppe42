@@ -33,16 +33,7 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 
 	//handShakeChan := make(chan ChannelPacket)
 
-	lastRecieved := ChannelPacket{ //Dr.Frankenstein's FrankenPacket
-		OrderList: []ChannelPacket{
-			ChannelPacket{PacketType: "newOrder", Floor: 0},
-			ChannelPacket{PacketType: "orderList", Floor: 1},
-			ChannelPacket{PacketType: "getOrderList", Floor: 2},
-			ChannelPacket{PacketType: "cost", Floor: 3},
-			ChannelPacket{PacketType: "orderComplete", Floor: 4},
-			ChannelPacket{PacketType: "requestCostFunc", Floor: 5},
-		},
-	}
+	lastRecieved := []uint64{0, 0, 0, 0, 0, 0}
 
 	for {
 		select {
@@ -55,8 +46,8 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 			//fmt.Printf("Comm Recieved packet of type %s from broadcast\n", msg.PacketType)
 			switch msg.PacketType {
 			case "newOrder":
-				if lastRecieved.OrderList[0].Timestamp != msg.Timestamp {
-					lastRecieved.OrderList[0].Timestamp = msg.Timestamp
+				if lastrecieved[0] != msg.Timestamp {
+					lastrecieved[0] = msg.Timestamp
 					//start
 					toOrders <- msg
 					if msg.Elevator != elevID {
@@ -68,8 +59,8 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 				//msg.Elevator = elevID
 				//sendMessage <- msg
 			case "orderList":
-				if lastRecieved.OrderList[1].Timestamp != msg.Timestamp {
-					lastRecieved.OrderList[1].Timestamp = msg.Timestamp
+				if lastrecieved[1] != msg.Timestamp {
+					lastrecieved[1] = msg.Timestamp
 					//start
 					if msg.Elevator == elevID {
 						toOrders <- msg
@@ -77,23 +68,23 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 					//end
 				}
 			case "getOrderList":
-				if lastRecieved.OrderList[2].Timestamp != msg.Timestamp {
-					lastRecieved.OrderList[2].Timestamp = msg.Timestamp
+				if lastrecieved[2] != msg.Timestamp {
+					lastrecieved[2] = msg.Timestamp
 					//start
 					toOrders <- msg
 					//end
 				}
 			case "cost":
-				if lastRecieved.OrderList[3].Timestamp != msg.Timestamp {
-					lastRecieved.OrderList[3].Timestamp = msg.Timestamp
+				if lastrecieved[3] != msg.Timestamp {
+					lastrecieved[3] = msg.Timestamp
 					//start
 					toOrders <- msg
 					//end
 				}
 
 			case "orderComplete":
-				if lastRecieved.OrderList[4].Timestamp != msg.Timestamp {
-					lastRecieved.OrderList[4].Timestamp = msg.Timestamp
+				if lastrecieved[4] != msg.Timestamp {
+					lastrecieved[4] = msg.Timestamp
 					//start
 					toOrders <- msg
 					toElevAlgo <- msg
@@ -101,8 +92,8 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 				}
 
 			case "requestCostFunc":
-				if lastRecieved.OrderList[5].Timestamp != msg.Timestamp {
-					lastRecieved.OrderList[5].Timestamp = msg.Timestamp
+				if lastrecieved[5] != msg.Timestamp {
+					lastrecieved[5] = msg.Timestamp
 					//start
 					toElevAlgo <- msg
 					//end
