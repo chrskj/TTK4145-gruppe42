@@ -228,12 +228,14 @@ func readFile() {
 			FloorTemp, _ := strconv.ParseInt(input[0], 10, 64)
 			DirectionTemp, _ := strconv.ParseBool(input[1])
 			TimestampTemp, _ := strconv.ParseUint(input[2], 10, 64)
-			localOrders[0] = append(localOrders[0], ChannelPacket{
-				Elevator:  thisElevator,
-				Floor:     FloorTemp,
-				Direction: DirectionTemp,
-				Timestamp: TimestampTemp,
-			})
+			if FloorTemp != -1 {
+				localOrders[0] = append(localOrders[0], ChannelPacket{
+					Elevator:  thisElevator,
+					Floor:     FloorTemp,
+					Direction: DirectionTemp,
+					Timestamp: TimestampTemp,
+				})
+			}
 			if len(input) > 3 {
 				FloorTemp, _ := strconv.ParseInt(input[3], 10, 64)
 				DirectionTemp, _ := strconv.ParseBool(input[4])
@@ -324,8 +326,10 @@ func removeOrder(toRemove ChannelPacket) {
 			if value.Floor == toRemove.Floor {
 				if index > 0 { //index-1 >= 0
 					localOrders[i] = append(localOrders[i][:index-1], localOrders[i][index+1:]...)
+					writeToFile()
 				} else {
 					localOrders[i] = localOrders[i][index+1:]
+					writeToFile()
 				}
 			}
 		}
