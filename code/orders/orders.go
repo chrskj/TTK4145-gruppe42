@@ -336,8 +336,10 @@ func removeOrder(toRemove ChannelPacket) {
 					data = []ChannelPacket{}
 				} else if index > 0 && index < len(data)-1 { //index-1 >= 0
 					data = append(data[:index], data[index+1:]...)
-				} else {
+				} else if index == 0 {
 					data = data[index+1:]
+				} else {
+					data = data[:index]
 				}
 			}
 		}
