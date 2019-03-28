@@ -49,11 +49,6 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders chan ChannelPacket)
 		select {
 		case temp := <-ComToOrders:
 			switch temp.PacketType {
-			/*
-				case "elevID":
-					fmt.Println("Recieved Elevator ID")
-					thisElevator = temp.Elevator
-			*/
 			case "cost":
 				if comparing {
 					fmt.Println("before where I think it stops")

@@ -1,6 +1,7 @@
 package elevutilfunctions
 
 import (
+	"fmt"
 	"math"
 
 	. "../elevio"
@@ -143,6 +144,59 @@ func QueueFuncShouldStop(elevator Elev) bool {
 			!QueueFuncOrdersAboveInQueue(elevator))
 	default:
 		return true
+	}
+}
+
+func ElevatorPrinter(elev Elev) {
+	fmt.Printf("State: ")
+	switch elev.State {
+	case 0:
+		fmt.Printf("Initialize\t")
+	case 1:
+		fmt.Printf("Idle\t")
+	case 2:
+		fmt.Printf("Running\t")
+	case 3:
+		fmt.Printf("DoorOpen\t")
+	case 4:
+		fmt.Printf("EmergencyStop\t")
+	}
+	fmt.Printf("| Current Direction: ")
+	switch elev.Dir {
+	case -1:
+		fmt.Printf("Going down...\t")
+	case 0:
+		fmt.Printf("Standing still...\t")
+	case 1:
+		fmt.Printf("Going up...\t")
+	}
+	fmt.Printf("| Floor: %d\n", elev.Floor)
+	//fmt.Printf("%t\n", elev.OrdersQueue)
+	for i := 0; i < len(elev.OrdersQueue); i++ {
+		for j := 0; j < len(elev.OrdersQueue[0]); j++ {
+			fmt.Printf("%t\t", elev.OrdersQueue[i][j])
+		}
+		fmt.Printf("\n")
+	}
+	fmt.Printf("==========================================================\n")
+}
+
+func DirBoolToInt(direction bool) ElevDir {
+	if direction {
+		return DirUp
+	} else {
+		return DirDown
+	}
+}
+
+func DirIntToBool(direction ElevDir) bool {
+	if direction == DirDown {
+		return false
+	} else if direction == DirUp {
+		return true
+	} else {
+		fmt.Printf("Error: DirStop cannot be converted to bool\n")
+		return false
 	}
 }
 
