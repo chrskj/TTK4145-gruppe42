@@ -88,6 +88,8 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 					}
 				}
 				localOrders[0] = locOrdersTemp
+			case "elevLost":
+				// Do samthang
 			}
 		case temp := <-ElevAlgoToOrders:
 			switch temp.PacketType {
