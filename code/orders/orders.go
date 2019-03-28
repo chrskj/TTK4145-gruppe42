@@ -295,7 +295,8 @@ func writeToFile() {
 func addOrder(newOrder ChannelPacket) {
 	fmt.Println("Lets add an order!", newOrder)
 	if len(data) > 0 {
-		if data[len(data)-1].Timestamp == newOrder.Timestamp {
+		if data[len(data)-1].Timestamp != newOrder.Timestamp ||
+			newOrder.Elevator != data[len(data)-1].Elevator {
 			if newOrder.Elevator != 0 {
 				data = append(data, newOrder)
 			}
