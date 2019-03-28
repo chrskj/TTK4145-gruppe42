@@ -32,14 +32,8 @@ var data []ChannelPacket
 var localOrders [2][]ChannelPacket
 var comparing bool = false
 
-<<<<<<< HEAD
-func InitOrders(OrdersToCom, ComToOrders, ElevAlgoToOrders chan ChannelPacket,
-	id int) {
-	thisElevator = id
-=======
 func InitOrders(OrdersToCom, ComToOrders, ElevAlgoToOrders chan ChannelPacket, elevID int) {
 	thisElevator = elevID
->>>>>>> 1b8aba10472c5dd7d694649d4c013f124e9e621c
 	readFile()
 	OrdersToCom <- ChannelPacket{
 		PacketType: "getOrderList",
