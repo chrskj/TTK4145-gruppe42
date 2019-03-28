@@ -78,9 +78,7 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 			switch temp.PacketType {
 			case "cost":
 				if comparing {
-					fmt.Println("before where I think it stops")
 					costChan <- temp
-					fmt.Println("after where I think it stops")
 				}
 			case "orderComplete":
 				removeOrder(temp)

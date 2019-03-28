@@ -31,6 +31,24 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 	peerUpdateCh := make(chan peers.PeerUpdate)
 	go peers.Receiver(16569, peerUpdateCh)
 
+	go func() {
+		msg := <-peerUpdateCh
+		for {
+			msg = <-peerUpdateCh
+			fmt.Printf("Peer update:\n")
+			fmt.Printf("  Peers:    %q\n", msg.Peers)
+			fmt.Printf("  New:      %q\n", msg.New)
+			fmt.Printf("  Lost:     %q\n", msg.Lost)
+			if len(msg.Lost) > 0 {
+				idLost, _ := strconv.Atoi(msg.Lost[0])
+				toOrders <- ChannelPacket{
+					PacketType: "elevLost",
+					Elevator:   idLost,
+				}
+			}
+		}
+	}()
+
 	//handShakeChan := make(chan ChannelPacket)
 
 	lastRecieved := ChannelPacket{ //Dr.Frankenstein's FrankenPacket
@@ -107,29 +125,17 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 					toElevAlgo <- msg
 					//end
 				}
-
 				//case "handShake":
 				//	handShakeChan <- msg
 			}
-		case msg := <-peerUpdateCh:
-			fmt.Printf("Peer update:\n")
-			fmt.Printf("  Peers:    %q\n", msg.Peers)
-			fmt.Printf("  New:      %q\n", msg.New)
-			fmt.Printf("  Lost:     %q\n", msg.Lost)
-			if len(msg.Lost) > 0 {
-				idLost, _ := strconv.Atoi(msg.Lost[0])
-				toOrders <- ChannelPacket{
-					PacketType: "elevLost",
-					Elevator:   idLost,
-				}
-			}
+
 		default:
 		}
 	}
 }
 
 func SendImportantMsg(msg ChannelPacket, sendMessage chan ChannelPacket) {
-	for tries := 0; tries < 10; tries++ {
+	for tries := 0; tries < 1; tries++ {
 		sendMessage <- msg
 		time.Sleep(10 * time.Millisecond)
 	}

@@ -62,15 +62,14 @@ func ClearOrders(floor int, elevator *Elev) {
 	SetButtonLamp(BT_Cab, floor, false)
 }
 
-func CreateCostPacket(order ChannelPacket, elevator *Elev,
-	engineFlag bool) ChannelPacket {
+func CreateCostPacket(order ChannelPacket, elevator *Elev, engineFlag bool) ChannelPacket {
 	packet := ChannelPacket{
 		PacketType: "cost",
 		Cost: CalculateCostFunction(*elevator, ChannelPacket{
 			Elevator:  order.Elevator,
 			Floor:     order.Floor,
-			Direction: order.Direction,
-			Timestamp: uint64(time.Now().UnixNano())}, engineFlag),
+			Direction: order.Direction}, engineFlag),
+		Timestamp: uint64(time.Now().UnixNano()),
 	}
 	return packet
 }
