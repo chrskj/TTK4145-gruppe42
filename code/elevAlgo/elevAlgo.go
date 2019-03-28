@@ -135,7 +135,10 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo, ElevAlgoToCom,
 				} else {
 					elevator.OrdersQueue[a.Floor][ButtonCab] = true
 				}
-				go func() { drv_floors <- a.Floor }()
+				if elevator.State == Idle {
+					go func() { drv_floors <- a.Floor }()
+				}
+
 			} else {
 				if a.Button == BT_Cab {
 					elevator.OrdersQueue[a.Floor][ButtonCab] = true
