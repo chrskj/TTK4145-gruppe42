@@ -283,6 +283,7 @@ func writeToFile() {
 }
 
 func addOrder(newOrder ChannelPacket) {
+	fmt.Printf("Adding some orders to this party!\n")
 	if newOrder.Elevator != 0 {
 		data = append(data, newOrder)
 	} else { //if newOrder.Elevator == 0
@@ -297,7 +298,7 @@ func addOrder(newOrder ChannelPacket) {
 
 func removeOrder(toRemove ChannelPacket) {
 	for index, value := range data { //checks all normal orders
-		if value.Timestamp == toRemove.Timestamp &&
+		if value.Floor == toRemove.Floor &&
 			value.Elevator == toRemove.Elevator {
 			if index-1 >= 0 {
 				data = append(data[:index-1], data[index+1:]...)
@@ -308,7 +309,7 @@ func removeOrder(toRemove ChannelPacket) {
 	}
 	if toRemove.Elevator == thisElevator { //checks hall orders for this elevator
 		for index, value := range data {
-			if value.Timestamp == toRemove.Timestamp &&
+			if value.Floor == toRemove.Floor &&
 				value.Elevator == toRemove.Elevator {
 				if index > 0 { //index-1 >= 0
 					localOrders[0] = append(localOrders[0][:index-1],
@@ -320,7 +321,7 @@ func removeOrder(toRemove ChannelPacket) {
 		}
 	} else if toRemove.Elevator == 0 { //checks cab orders for this elevator
 		for index, value := range data {
-			if value.Timestamp == toRemove.Timestamp &&
+			if value.Floor == toRemove.Floor &&
 				value.Elevator == toRemove.Elevator {
 				if index > 0 { //index-1 >= 0
 					localOrders[1] = append(localOrders[1][:index-1],

@@ -172,10 +172,9 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo, ElevAlgoToCom,
 				engineWatchDog.Stop()
 				ClearOrders(a, &elevator)
 				packet := ChannelPacket{
+					Elevator:   elevID,
 					PacketType: "orderComplete",
 					Floor:      elevator.Floor,
-					Direction:  DirIntToBool(elevator.Dir),
-					Timestamp:  uint64(time.Now().UnixNano()),
 				}
 				ElevAlgoToCom <- packet //Notifying that order is complete
 				//OpenDoor(elevatorPtr, doorTimerPtr) Prosjekt for en annen gang
