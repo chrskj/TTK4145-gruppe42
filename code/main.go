@@ -46,7 +46,7 @@ func main() {
 		OrdersToElevAlgo, elevID)
 
 	go elevAlgo.ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo, ElevAlgoToCom,
-		OrdersToElevAlgo, elevPort)
+		OrdersToElevAlgo, elevPort, elevID)
 
 	go communication.InitCom(ComToElevAlgo, ComToOrders, ElevAlgoToCom,
 		OrdersToCom, elevID)

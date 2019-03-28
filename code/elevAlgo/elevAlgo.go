@@ -29,7 +29,7 @@ func InitElev(elevPort string) {
 }
 
 func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo,
-	ElevAlgoToCom, OrdersToElevAlgo chan ChannelPacket, elevPort string) {
+	ElevAlgoToCom, OrdersToElevAlgo chan ChannelPacket, elevPort string, id int) {
 	InitElev(elevPort)
 	SetMotorDirection(MD_Up)
 	elevator := Elev{
@@ -172,6 +172,7 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo,
 				engineWatchDog.Stop()
 				ClearOrders(a, &elevator)
 				packet := ChannelPacket{
+					Elevator:   id,
 					PacketType: "orderComplete",
 					Floor:      elevator.Floor,
 					Direction:  DirIntToBool(elevator.Dir),
