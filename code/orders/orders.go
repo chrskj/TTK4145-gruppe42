@@ -96,6 +96,9 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders chan ChannelPacket)
 				if newOrder.Timestamp > 0 {
 					go costCompare(newOrder, OrdersToCom, costChan)
 				}
+			case "engineTimeOut":
+				fmt.Println("Motor has stopped. Redistributing orders")
+
 			}
 		}
 	}
