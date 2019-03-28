@@ -98,13 +98,21 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders chan ChannelPacket)
 				}
 			case "engineTimeOut":
 				fmt.Println("Motor has stopped. Redistributing orders")
-
+				var failedOrders []ChannelPacket
+				for len(localOrders[0]) > 0 {
+					if costCompare(newOrder, OrdersToCom, costChan) { //order was assigned successfully
+						fmt.Printf("Order was assigned to elevator %d\n")
+						removeOrder(newOrder)
+					} else { //order assignment unsuccessful
+						failedOrders = append(failedOrders, newOrder)
+					}
+				}
 			}
 		}
 	}
 }
 
-func costCompare(newOrder ChannelPacket, OrdersToCom, costChan chan ChannelPacket) {
+func costCompare(newOrder ChannelPacket, OrdersToCom, costChan chan ChannelPacket) (returnVar bool) {
 	comparing = true
 	OrdersToCom <- ChannelPacket{
 		PacketType: "requestCostFunc",
@@ -159,10 +167,12 @@ func costCompare(newOrder ChannelPacket, OrdersToCom, costChan chan ChannelPacke
 		temp := newOrder
 		temp.PacketType = "newOrder"
 		OrdersToCom <- temp
+		returnVar = true
 	} else {
-		//error, no costs received
+		returnVar = false
 	}
 	comparing = false
+	return
 }
 
 func readFile() {
@@ -249,10 +259,25 @@ func addOrder(newOrder ChannelPacket) {
 	}
 }
 
-func removeOrder(toRemove ChannelPacket) []ChannelPacket {
+func removeOrder(toRemove ChannelPacket) {
 	for index, value := range data {
-		if value.Timestamp == toRemove.Timestamp {
-			data = append(data[:index-1], data[index+1:]...)
+		if value.Timestamp == toRemove.Timestamp && value.Elevator == toRemove.Elevator {
+			if index-1 >= 0 {
+				data = append(data[:index-1], data[index+1:]...)
+			} else {
+				data = data[index+1:]
+			}
+		}
+	}
+	if toRemove.Elevator == thisElevator {
+		for index, value := range data {
+			if value.Timestamp == toRemove.Timestamp && value.Elevator == toRemove.Elevator {
+				if index > 0 { //index-1 >= 0
+					localOrders[0] = append(localOrders[0][:index-1], localOrders[0][index+1:]...)
+				} else {
+					localOrders[0] = localOrders[0][index+1:]
+				}
+			}
 		}
 	}
 	if toRemove.Elevator == thisElevator || toRemove.Elevator == 0 {
