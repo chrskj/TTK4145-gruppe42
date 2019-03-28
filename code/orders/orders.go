@@ -43,8 +43,10 @@ func InitOrders(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 	go orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders, OrdersToElevAlgo)
 	time.Sleep(1 * time.Second)
 	for _, val := range localOrders[0] {
-		val.PacketType = "newOrder"
-		OrdersToElevAlgo <- val
+		if val.Elevator != -1 {
+			val.PacketType = "newOrder"
+			OrdersToElevAlgo <- val
+		}
 	}
 	for _, val := range localOrders[1] {
 		val.PacketType = "cabOrder"
@@ -268,7 +270,7 @@ func writeToFile() {
 				valueStr = append(valueStr, strconv.FormatUint(localOrders[0][j].Timestamp, 10))
 				fmt.Println(valueStr[0])
 			} else {
-				valueStr = append(valueStr, []string{"", "", ""}...)
+				valueStr = append(valueStr, []string{"-1", "", ""}...)
 			}
 			if j < len(localOrders[1]) {
 				valueStr = append(valueStr, []string{strconv.FormatInt(localOrders[1][j].Floor, 10), "0"}...)
@@ -286,48 +288,44 @@ func addOrder(newOrder ChannelPacket) {
 	fmt.Printf("Adding some orders to this party!\n")
 	if newOrder.Elevator != 0 {
 		data = append(data, newOrder)
-	} else { //if newOrder.Elevator == 0
-		localOrders[1] = append(localOrders[1], newOrder)
-		writeToFile()
 	}
 	if newOrder.Elevator == thisElevator {
 		localOrders[0] = append(localOrders[0], newOrder)
 		writeToFile()
 	}
+	if newOrder.Elevator == 0 {
+		unique := true
+		for _, val := range localOrders[1] {
+			if newOrder.Elevator == val.Elevator && newOrder.Floor == val.Floor {
+				unique = false
+			}
+		}
+		if unique {
+			localOrders[1] = append(localOrders[1], newOrder)
+			writeToFile()
+		}
+	}
 }
 
 func removeOrder(toRemove ChannelPacket) {
 	for index, value := range data { //checks all normal orders
-		if value.Floor == toRemove.Floor &&
-			value.Elevator == toRemove.Elevator {
-			if index-1 >= 0 {
+		if value.Floor == toRemove.Floor {
+			if len(data) == 1 {
+				data = []ChannelPacket{}
+			} else if index > 0 { //index-1 >= 0
 				data = append(data[:index-1], data[index+1:]...)
 			} else {
 				data = data[index+1:]
 			}
 		}
 	}
-	if toRemove.Elevator == thisElevator { //checks hall orders for this elevator
-		for index, value := range data {
-			if value.Floor == toRemove.Floor &&
-				value.Elevator == toRemove.Elevator {
+	for i, val := range localOrders {
+		for index, value := range val {
+			if value.Floor == toRemove.Floor {
 				if index > 0 { //index-1 >= 0
-					localOrders[0] = append(localOrders[0][:index-1],
-						localOrders[0][index+1:]...)
+					localOrders[i] = append(localOrders[i][:index-1], localOrders[i][index+1:]...)
 				} else {
-					localOrders[0] = localOrders[0][index+1:]
-				}
-			}
-		}
-	} else if toRemove.Elevator == 0 { //checks cab orders for this elevator
-		for index, value := range data {
-			if value.Floor == toRemove.Floor &&
-				value.Elevator == toRemove.Elevator {
-				if index > 0 { //index-1 >= 0
-					localOrders[1] = append(localOrders[1][:index-1],
-						localOrders[1][index+1:]...)
-				} else {
-					localOrders[1] = localOrders[1][index+1:]
+					localOrders[i] = localOrders[i][index+1:]
 				}
 			}
 		}
