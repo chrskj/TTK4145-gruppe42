@@ -31,8 +31,6 @@ func main() {
 	//Kanal heisalgo -> komm (cost function)
 	ElevAlgoToCom := make(chan ChannelPacket)
 
-	go orders.InitOrders(OrdersToCom, ComToOrders, ElevAlgoToOrders)
-
 	var elevPort string
 	flag.StringVar(&elevPort, "port", "15657", "Port of elevator to connect to")
 	var elevIDstring string
@@ -49,6 +47,8 @@ func main() {
 
 	go communication.InitCom(ComToElevAlgo, ComToOrders, ElevAlgoToCom,
 		OrdersToCom, elevID)
+
+	go orders.InitOrders(OrdersToCom, ComToOrders, ElevAlgoToOrders, elevID)
 
 	for {
 	}

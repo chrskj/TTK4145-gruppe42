@@ -32,7 +32,9 @@ var data []ChannelPacket
 var localOrders [2][]ChannelPacket
 var comparing bool = false
 
-func InitOrders(OrdersToCom, ComToOrders, ElevAlgoToOrders chan ChannelPacket) {
+func InitOrders(OrdersToCom, ComToOrders, ElevAlgoToOrders chan ChannelPacket,
+	id int) {
+	thisElevator = id
 	readFile()
 	OrdersToCom <- ChannelPacket{
 		PacketType: "getOrderList",
@@ -48,9 +50,6 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders chan ChannelPacket)
 		select {
 		case temp := <-ComToOrders:
 			switch temp.PacketType {
-			case "elevID":
-				fmt.Println("Recieved Elevator ID")
-				thisElevator = temp.Elevator
 			case "cost":
 				if comparing {
 					fmt.Println("before where I think it stops")
