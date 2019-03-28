@@ -137,6 +137,15 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 }
 
 func SendImportantMsg(msg ChannelPacket, sendMessage, handShakeChan chan ChannelPacket){
+	sendMessage <- msg
+	for tries := 0; tries<10; tries++;{
+		sendMessage <- msg
+		time.Sleep(10*time.Millisecond)
+	}
+}
+
+/*
+func SendImportantMsg(msg ChannelPacket, sendMessage, handShakeChan chan ChannelPacket){
 	recievedHandShakes := []int{}
 	sendMessage <- msg
 	for tries := 0; tries<10 && len(recievedHandShakes)<NumElevators{
@@ -162,3 +171,4 @@ func SendImportantMsg(msg ChannelPacket, sendMessage, handShakeChan chan Channel
 		}
 	}
 }
+*/
