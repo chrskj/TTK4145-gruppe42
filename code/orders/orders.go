@@ -62,7 +62,6 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 	OrdersToElevAlgo chan ChannelPacket) {
 	costChan := make(chan ChannelPacket)
 	var redistributeOrders = func(LostElevator int) bool {
-		var tempArray []ChannelPacket
 		for _, val := range data {
 			if val.Elevator == LostElevator {
 				go costCompare(val, OrdersToCom, OrdersToElevAlgo, costChan)
@@ -141,12 +140,12 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 				}
 			case "engineTimeOut":
 				fmt.Println("Motor has stopped. Redistributing orders")
-				for len(localOrders) > 0 {
-					for _, val := range localOrders[0] {
-						go costCompare(val, OrdersToCom, OrdersToElevAlgo, costChan)
-						time.Sleep(3 * time.Second)
-					}
+				//for len(localOrders) > 0 {
+				for _, val := range localOrders[0] {
+					go costCompare(val, OrdersToCom, OrdersToElevAlgo, costChan)
+					time.Sleep(3 * time.Second)
 				}
+				//}
 			}
 		}
 	}
