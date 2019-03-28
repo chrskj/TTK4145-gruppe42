@@ -31,7 +31,7 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 	peerUpdateCh := make(chan peers.PeerUpdate)
 	go peers.Receiver(16569, peerUpdateCh)
 
-	handShakeChan := make(chan ChannelPacket)
+	//handShakeChan := make(chan ChannelPacket)
 
 	lastRecieved := ChannelPacket{ //Dr.Frankenstein's FrankenPacket
 		OrderList: []ChannelPacket{
@@ -48,9 +48,9 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 		select {
 		case msg := <-fromElevAlgo:
 			msg.Elevator = elevID
-			go SendImportantMsg(msg, sendMessage, handShakeChan)
+			go SendImportantMsg(msg, sendMessage)
 		case msg := <-fromOrders:
-			go SendImportantMsg(msg, sendMessage, handShakeChan)
+			go SendImportantMsg(msg, sendMessage)
 		case msg := <-receiveMessage:
 			//fmt.Printf("Comm Recieved packet of type %s from broadcast\n", msg.PacketType)
 			switch msg.PacketType {
@@ -64,9 +64,9 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 					}
 					//end
 				}
-				msg.PacketType = "handShake"
-				msg.Elevator = elevID
-				sendMessage <- msg
+				//msg.PacketType = "handShake"
+				//msg.Elevator = elevID
+				//sendMessage <- msg
 			case "orderList":
 				if lastRecieved.OrderList[1].Timestamp != msg.Timestamp {
 					lastRecieved.OrderList[1].Timestamp = msg.Timestamp
@@ -76,9 +76,6 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 					}
 					//end
 				}
-				msg.PacketType = "handShake"
-				msg.Elevator = elevID
-				sendMessage <- msg
 			case "getOrderList":
 				if lastRecieved.OrderList[2].Timestamp != msg.Timestamp {
 					lastRecieved.OrderList[2].Timestamp = msg.Timestamp
@@ -86,9 +83,6 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 					toOrders <- msg
 					//end
 				}
-				msg.PacketType = "handShake"
-				msg.Elevator = elevID
-				sendMessage <- msg
 			case "cost":
 				if lastRecieved.OrderList[3].Timestamp != msg.Timestamp {
 					lastRecieved.OrderList[3].Timestamp = msg.Timestamp
@@ -96,9 +90,7 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 					toOrders <- msg
 					//end
 				}
-				msg.PacketType = "handShake"
-				msg.Elevator = elevID
-				sendMessage <- msg
+
 			case "orderComplete":
 				if lastRecieved.OrderList[4].Timestamp != msg.Timestamp {
 					lastRecieved.OrderList[4].Timestamp = msg.Timestamp
@@ -107,9 +99,7 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 					toElevAlgo <- msg
 					//end
 				}
-				msg.PacketType = "handShake"
-				msg.Elevator = elevID
-				sendMessage <- msg
+
 			case "requestCostFunc":
 				if lastRecieved.OrderList[5].Timestamp != msg.Timestamp {
 					lastRecieved.OrderList[5].Timestamp = msg.Timestamp
@@ -117,11 +107,9 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 					toElevAlgo <- msg
 					//end
 				}
-				msg.PacketType = "handShake"
-				msg.Elevator = elevID
-				sendMessage <- msg
-			case "handShake":
-				handShakeChan <- msg
+
+				//case "handShake":
+				//	handShakeChan <- msg
 			}
 		case msg := <-peerUpdateCh:
 			fmt.Printf("Peer update:\n")
@@ -140,11 +128,10 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 	}
 }
 
-func SendImportantMsg(msg ChannelPacket, sendMessage, handShakeChan chan ChannelPacket){
-	sendMessage <- msg
-	for tries := 0; tries<10; tries++;{
+func SendImportantMsg(msg ChannelPacket, sendMessage chan ChannelPacket) {
+	for tries := 0; tries < 10; tries++ {
 		sendMessage <- msg
-		time.Sleep(10*time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 	}
 }
 
@@ -177,7 +164,4 @@ func SendImportantMsg(msg ChannelPacket, sendMessage, handShakeChan chan Channel
 		}
 	}
 }
-<<<<<<< HEAD
 */
-=======
->>>>>>> a5c391b07049a50518b8bb7353574b5cd425eca6
