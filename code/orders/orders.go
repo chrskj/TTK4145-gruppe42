@@ -61,9 +61,17 @@ func InitOrders(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 	OrdersToElevAlgo chan ChannelPacket) {
 	costChan := make(chan ChannelPacket)
-	var redistributeOrders = func() bool {
-		for len(localOrders[0]) > 0 {
-			go costCompare(localOrders[0][0], OrdersToCom, OrdersToElevAlgo, costChan) 
+	var redistributeOrders = func(LostElevator int) bool {
+		fmt.Println(localOrders[0])
+		var tempArray []ChannelPacket
+		for _, val := range data {
+			if val.Elevator == LostElevator {
+				tempArray = append(tempArray, val)
+			}
+		}
+		for _, val := range tempArray {
+			go costCompare(val, OrdersToCom, OrdersToElevAlgo, costChan)
+		}
 		return true
 	}
 
@@ -80,6 +88,7 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 			case "orderComplete":
 				removeOrder(temp)
 			case "newOrder":
+				fmt.Println("New order from comm")
 				if temp.Elevator == thisElevator {
 					OrdersToElevAlgo <- temp
 					addOrder(temp)
@@ -105,8 +114,8 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 					ordersRecieved = true
 				}
 			case "elevLost":
-				fmt.Printf("Recieved %s from comm. Redistributing orders\n", temp.PacketType)
-				redistributeOrders()
+				fmt.Printf("Recieved %s from comm. Redistributing orders", temp.PacketType)
+				redistributeOrders(temp.Elevator)
 			}
 		case temp := <-ElevAlgoToOrders:
 			switch temp.PacketType {
@@ -135,13 +144,15 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 				}
 			case "engineTimeOut":
 				fmt.Println("Motor has stopped. Redistributing orders")
-				redistributeOrders()
+				for len(localOrders[0]) > 0 {
+					go costCompare(localOrders[0][0], OrdersToCom, OrdersToElevAlgo, costChan)
+				}
 			}
 		}
 	}
 }
 
-func costCompare(newOrder ChannelPacket, OrdersToCom, OrdersToElevAlgo,	costChan chan ChannelPacket){
+func costCompare(newOrder ChannelPacket, OrdersToCom, OrdersToElevAlgo, costChan chan ChannelPacket) {
 	comparing = true
 	OrdersToCom <- ChannelPacket{
 		PacketType: "requestCostFunc",
@@ -194,7 +205,8 @@ func costCompare(newOrder ChannelPacket, OrdersToCom, OrdersToElevAlgo,	costChan
 	if newOrder.Elevator != -1 {
 		temp := newOrder
 		temp.PacketType = "newOrder"
-		addOrder(newOrder)
+		//fmt.Println("Adding order from costCompare")
+		//addOrder(newOrder)
 		OrdersToCom <- temp
 		if newOrder.Elevator == thisElevator {
 			OrdersToElevAlgo <- temp
@@ -288,7 +300,6 @@ func addOrder(newOrder ChannelPacket) {
 				data = append(data, newOrder)
 			}
 			if newOrder.Elevator == thisElevator {
-				fmt.Println("Adding some 0s")
 				localOrders[0] = append(localOrders[0], newOrder)
 				writeToFile()
 			}
@@ -298,7 +309,6 @@ func addOrder(newOrder ChannelPacket) {
 			data = append(data, newOrder)
 		}
 		if newOrder.Elevator == thisElevator {
-			fmt.Println("Adding some 0s")
 			localOrders[0] = append(localOrders[0], newOrder)
 			writeToFile()
 		}
@@ -319,26 +329,30 @@ func addOrder(newOrder ChannelPacket) {
 }
 
 func removeOrder(toRemove ChannelPacket) {
-	for index, value := range data { //checks all normal orders
-		if value.Floor == toRemove.Floor {
-			if len(data) == 1 {
-				data = []ChannelPacket{}
-			} else if index > 0 { //index-1 >= 0
-				data = append(data[:index-1], data[index+1:]...)
-			} else {
-				data = data[index+1:]
+	if len(data) > 0 {
+		for index, value := range data { //checks all normal orders
+			if value.Floor == toRemove.Floor {
+				if len(data) == 1 {
+					data = []ChannelPacket{}
+				} else if index > 0 { //index-1 >= 0
+					data = append(data[:index-1], data[index+1:]...)
+				} else {
+					data = data[index+1:]
+				}
 			}
 		}
 	}
-	for i, val := range localOrders {
-		for index, value := range val {
-			if value.Floor == toRemove.Floor {
-				if index > 0 { //index-1 >= 0
-					localOrders[i] = append(localOrders[i][:index], localOrders[i][index+1:]...)
-					writeToFile()
-				} else {
-					localOrders[i] = localOrders[i][index+1:]
-					writeToFile()
+	if len(localOrders) > 0 {
+		for i, val := range localOrders {
+			for index, value := range val {
+				if value.Floor == toRemove.Floor {
+					if index > 0 { //index-1 >= 0
+						localOrders[i] = append(localOrders[i][:index], localOrders[i][index+1:]...)
+						writeToFile()
+					} else {
+						localOrders[i] = localOrders[i][index+1:]
+						writeToFile()
+					}
 				}
 			}
 		}
