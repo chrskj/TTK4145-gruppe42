@@ -322,11 +322,11 @@ func removeOrder(toRemove ChannelPacket) {
 		for index, value := range val {
 			if value.Floor == toRemove.Floor {
 				if index > 0 { //index-1 >= 0
-					fmt.Println("before\n")
-					fmt.Println(localOrders[i])
+					//fmt.Println("before\n")
+					//fmt.Println(localOrders[i])
 					localOrders[i] = append(localOrders[i][:index], localOrders[i][index+1:]...)
-					fmt.Println("after\n")
-					fmt.Println(localOrders[i])
+					//fmt.Println("after\n")
+					//fmt.Println(localOrders[i])
 
 					writeToFile()
 				} else {
