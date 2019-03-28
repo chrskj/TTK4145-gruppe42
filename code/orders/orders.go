@@ -8,7 +8,8 @@
 
 //sende ut alle orders den har til komm
 
-//ta imot alle andres ordre fra komm, og vurdere hva som er nye ordre, og hva som er ferdige ordre (og da slette)
+//ta imot alle andres ordre fra komm, og vurdere hva som er nye ordre,
+//og hva som er ferdige ordre (og da slette)
 
 //Hvor lagres alle de andre heisene sine ordre?
 //Når leses det fra fil for å hente gamle ordre?
@@ -33,7 +34,9 @@ var localOrders [2][]ChannelPacket
 var comparing bool = false
 var ordersRecieved = false
 
-func InitOrders(OrdersToCom, ComToOrders, ElevAlgoToOrders, OrdersToElevAlgo chan ChannelPacket, elevID int) {
+func InitOrders(OrdersToCom, ComToOrders, ElevAlgoToOrders,
+	OrdersToElevAlgo chan ChannelPacket, elevID int) {
+
 	thisElevator = elevID
 	readFile()
 	data = localOrders[0]
@@ -53,7 +56,9 @@ func InitOrders(OrdersToCom, ComToOrders, ElevAlgoToOrders, OrdersToElevAlgo cha
 	go orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders, OrdersToElevAlgo)
 }
 
-func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders, OrdersToElevAlgo chan ChannelPacket) {
+func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders,
+	OrdersToElevAlgo chan ChannelPacket) {
+
 	costChan := make(chan ChannelPacket)
 	for {
 		select {
@@ -102,7 +107,8 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders, OrdersToElevAlgo c
 			case "newOrder":
 				addOrder(temp)
 			case "buttonPress":
-				fmt.Println("Orders recieved " + temp.PacketType + " from elevAlgo")
+				fmt.Println("Orders recieved " + temp.PacketType +
+					" from elevAlgo")
 				newOrder := ChannelPacket{
 					Elevator:  -1, //Skal det ikke være heisens ID her?
 					Floor:     temp.Floor,
@@ -111,7 +117,8 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders, OrdersToElevAlgo c
 				}
 				//check if order already exists
 				for _, value := range data {
-					if value.Floor == newOrder.Floor && value.Direction == newOrder.Direction {
+					if value.Floor == newOrder.Floor &&
+						value.Direction == newOrder.Direction {
 						newOrder.Timestamp = 0
 						break
 					}
@@ -123,7 +130,8 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders, OrdersToElevAlgo c
 			case "engineTimeOut":
 				fmt.Println("Motor has stopped. Redistributing orders")
 				for len(localOrders[1]) > 0 {
-					if costCompare(localOrders[1][0], OrdersToCom, costChan) { //order was assigned successfully
+					if costCompare(localOrders[1][0], OrdersToCom, costChan) {
+						//order was assigned successfully
 						fmt.Printf("Order was assigned to elevator %d\n")
 						removeOrder(localOrders[1][0])
 					}
@@ -133,7 +141,8 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders, OrdersToElevAlgo c
 	}
 }
 
-func costCompare(newOrder ChannelPacket, OrdersToCom, costChan chan ChannelPacket) (returnVar bool) {
+func costCompare(newOrder ChannelPacket, OrdersToCom,
+	costChan chan ChannelPacket) (returnVar bool) {
 	comparing = true
 	OrdersToCom <- ChannelPacket{
 		PacketType: "requestCostFunc",
@@ -288,7 +297,8 @@ func addOrder(newOrder ChannelPacket) {
 
 func removeOrder(toRemove ChannelPacket) {
 	for index, value := range data { //checks all normal orders
-		if value.Timestamp == toRemove.Timestamp && value.Elevator == toRemove.Elevator {
+		if value.Timestamp == toRemove.Timestamp &&
+			value.Elevator == toRemove.Elevator {
 			if index-1 >= 0 {
 				data = append(data[:index-1], data[index+1:]...)
 			} else {
@@ -298,9 +308,11 @@ func removeOrder(toRemove ChannelPacket) {
 	}
 	if toRemove.Elevator == thisElevator { //checks hall orders for this elevator
 		for index, value := range data {
-			if value.Timestamp == toRemove.Timestamp && value.Elevator == toRemove.Elevator {
+			if value.Timestamp == toRemove.Timestamp &&
+				value.Elevator == toRemove.Elevator {
 				if index > 0 { //index-1 >= 0
-					localOrders[0] = append(localOrders[0][:index-1], localOrders[0][index+1:]...)
+					localOrders[0] = append(localOrders[0][:index-1],
+						localOrders[0][index+1:]...)
 				} else {
 					localOrders[0] = localOrders[0][index+1:]
 				}
@@ -308,9 +320,11 @@ func removeOrder(toRemove ChannelPacket) {
 		}
 	} else if toRemove.Elevator == thisElevator { //checks cab orders for this elevator
 		for index, value := range data {
-			if value.Timestamp == toRemove.Timestamp && value.Elevator == toRemove.Elevator {
+			if value.Timestamp == toRemove.Timestamp &&
+				value.Elevator == toRemove.Elevator {
 				if index > 0 { //index-1 >= 0
-					localOrders[1] = append(localOrders[1][:index-1], localOrders[1][index+1:]...)
+					localOrders[1] = append(localOrders[1][:index-1],
+						localOrders[1][index+1:]...)
 				} else {
 					localOrders[1] = localOrders[1][index+1:]
 				}

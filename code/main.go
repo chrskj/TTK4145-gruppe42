@@ -42,10 +42,11 @@ func main() {
 		elevID = int(temp)
 	}()
 
-	go orders.InitOrders(OrdersToCom, ComToOrders, ElevAlgoToOrders, OrdersToElevAlgo, elevID)
+	go orders.InitOrders(OrdersToCom, ComToOrders, ElevAlgoToOrders,
+		OrdersToElevAlgo, elevID)
 
-	go elevAlgo.ElevStateMachine(ElevAlgoToOrders,
-		ComToElevAlgo, ElevAlgoToCom, OrdersToElevAlgo, elevPort)
+	go elevAlgo.ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo, ElevAlgoToCom,
+		OrdersToElevAlgo, elevPort)
 
 	go communication.InitCom(ComToElevAlgo, ComToOrders, ElevAlgoToCom,
 		OrdersToCom, elevID)
