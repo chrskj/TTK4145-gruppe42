@@ -291,13 +291,15 @@ func writeToFile() {
 
 func addOrder(newOrder ChannelPacket) {
 	fmt.Println("Lets add an order!", newOrder)
-	if newOrder.Elevator != 0 {
-		data = append(data, newOrder)
-	}
-	if newOrder.Elevator == thisElevator {
-		fmt.Println("Adding some 0s")
-		localOrders[0] = append(localOrders[0], newOrder)
-		writeToFile()
+	if data[len(data)-1].Timestamp == newOrder.Timestamp {
+		if newOrder.Elevator != 0 {
+			data = append(data, newOrder)
+		}
+		if newOrder.Elevator == thisElevator {
+			fmt.Println("Adding some 0s")
+			localOrders[0] = append(localOrders[0], newOrder)
+			writeToFile()
+		}
 	}
 	if newOrder.Elevator == 0 {
 		unique := true
@@ -311,6 +313,7 @@ func addOrder(newOrder ChannelPacket) {
 			writeToFile()
 		}
 	}
+
 }
 
 func removeOrder(toRemove ChannelPacket) {
