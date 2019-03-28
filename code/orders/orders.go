@@ -97,7 +97,7 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 				for len(localOrders[1]) > 0 {
 					localOrders[1][0].Elevator = -1
 					if costCompare(localOrders[1][0], OrdersToCom, costChan) { //order was assigned successfully
-						fmt.Printf("Order was assigned to elevator %d\n")
+						fmt.Printf("Order was assigned to elevator x\n")
 						removeOrder(localOrders[1][0])
 					}
 				}

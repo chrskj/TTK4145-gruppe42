@@ -30,66 +30,66 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 	peerUpdateCh := make(chan peers.PeerUpdate)
 	go peers.Receiver(16569, peerUpdateCh)
 
-	go func() {
-		for {
-			select {
-			case temp := <-peerUpdateCh:
-				fmt.Printf("Peer update:\n")
-				fmt.Printf("  Peers:    %q\n", temp.Peers)
-				fmt.Printf("  New:      %q\n", temp.New)
-				fmt.Printf("  Lost:     %q\n", temp.Lost)
-			}
-		}
-	}()
-
 	for {
 		select {
-		case temp := <-fromElevAlgo:
-			fmt.Printf("Comm Recieved packet of type %s from ElevAlgo\n", temp.PacketType)
-			temp.Elevator = id
-			sendMessage <- temp
-		case temp := <-fromOrders:
-			fmt.Printf("Comm Recieved packet of type %s from Orders\n", temp.PacketType)
-			switch temp.PacketType {
+		case msg := <-fromElevAlgo:
+			fmt.Printf("Comm Recieved packet of type %s from ElevAlgo\n", msg.PacketType)
+			msg.Elevator = id
+			sendMessage <- msg
+		case msg := <-fromOrders:
+			fmt.Printf("Comm Recieved packet of type %s from Orders\n", msg.PacketType)
+			switch msg.PacketType {
 			case "requestCostFunc":
-				sendMessage <- temp
+				sendMessage <- msg
 			case "getOrderList":
-				sendMessage <- temp
+				sendMessage <- msg
 			case "newOrder":
-				fmt.Printf("newOrder.Elevator = %d\n", temp.Elevator)
-				if temp.Elevator == id {
-					toElevAlgo <- temp
-					sendMessage <- temp
+				fmt.Printf("newOrder.Elevator = %d\n", msg.Elevator)
+				if msg.Elevator == id {
+					toElevAlgo <- msg
+					sendMessage <- msg
 				} else {
-					sendMessage <- temp
+					sendMessage <- msg
 				}
 			case "orderList":
-				sendMessage <- temp
+				sendMessage <- msg
 			}
-		case temp := <-receiveMessage:
-			fmt.Printf("Comm Recieved packet of type %s from broadcast\n", temp.PacketType)
-			switch temp.PacketType {
+		case msg := <-receiveMessage:
+			fmt.Printf("Comm Recieved packet of type %s from broadcast\n", msg.PacketType)
+			switch msg.PacketType {
 			case "newOrder":
-				if temp.Elevator == id {
-					toElevAlgo <- temp
+				if msg.Elevator == id {
+					toElevAlgo <- msg
 				} else {
-					toOrders <- temp
-					temp.PacketType = "otherOrder"
-					toElevAlgo <- temp
+					toOrders <- msg
+					msg.PacketType = "otherOrder"
+					toElevAlgo <- msg
 				}
 			case "orderList":
-				if temp.Elevator == id {
-					toOrders <- temp
+				if msg.Elevator == id {
+					toOrders <- msg
 				}
 			case "getOrderList":
-				toOrders <- temp
+				toOrders <- msg
 			case "cost":
-				toOrders <- temp
+				toOrders <- msg
 			case "orderComplete":
-				toOrders <- temp
-				toElevAlgo <- temp
+				toOrders <- msg
+				toElevAlgo <- msg
 			case "requestCostFunc":
-				toElevAlgo <- temp
+				toElevAlgo <- msg
+			}
+		case msg := <-peerUpdateCh:
+			fmt.Printf("Peer update:\n")
+			fmt.Printf("  Peers:    %q\n", msg.Peers)
+			fmt.Printf("  New:      %q\n", msg.New)
+			fmt.Printf("  Lost:     %q\n", msg.Lost)
+			if len(msg.Lost) > 0 {
+				idLost, _ := strconv.Atoi(msg.Lost[0])
+				toOrders <- ChannelPacket{
+					PacketType: "elevLost",
+					Elevator:   idLost,
+				}
 			}
 		default:
 		}
