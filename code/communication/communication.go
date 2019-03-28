@@ -33,24 +33,16 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 	for {
 		select {
 		case msg := <-fromElevAlgo:
-			//fmt.Printf("Comm Recieved packet of type %s from ElevAlgo\n", msg.PacketType)
 			msg.Elevator = elevID
 			sendMessage <- msg
 		case msg := <-fromOrders:
-			//fmt.Printf("Comm Recieved packet of type %s from Orders\n", msg.PacketType)
 			switch msg.PacketType {
 			case "requestCostFunc":
 				sendMessage <- msg
 			case "getOrderList":
 				sendMessage <- msg
 			case "newOrder":
-				//fmt.Printf("newOrder.Elevator = %d\n", msg.Elevator)
-				if msg.Elevator == elevID {
-					toElevAlgo <- msg
-					sendMessage <- msg
-				} else {
-					sendMessage <- msg
-				}
+				sendMessage <- msg
 			case "orderList":
 				sendMessage <- msg
 			}
