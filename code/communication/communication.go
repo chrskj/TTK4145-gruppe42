@@ -16,7 +16,7 @@ import (
 )
 
 func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
-	id int) {
+	elevID int) {
 
 	sendMessage := make(chan ChannelPacket)
 	go bcast.Transmitter(16570, sendMessage)
@@ -25,7 +25,7 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 	go bcast.Receiver(16570, receiveMessage)
 
 	peerTxEnable := make(chan bool)
-	go peers.Transmitter(16569, strconv.Itoa(id), peerTxEnable)
+	go peers.Transmitter(16569, strconv.Itoa(elevID), peerTxEnable)
 
 	peerUpdateCh := make(chan peers.PeerUpdate)
 	go peers.Receiver(16569, peerUpdateCh)
@@ -34,7 +34,7 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 		select {
 		case msg := <-fromElevAlgo:
 			fmt.Printf("Comm Recieved packet of type %s from ElevAlgo\n", msg.PacketType)
-			msg.Elevator = id
+			msg.Elevator = elevID
 			sendMessage <- msg
 		case msg := <-fromOrders:
 			fmt.Printf("Comm Recieved packet of type %s from Orders\n", msg.PacketType)
@@ -45,7 +45,7 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 				sendMessage <- msg
 			case "newOrder":
 				fmt.Printf("newOrder.Elevator = %d\n", msg.Elevator)
-				if msg.Elevator == id {
+				if msg.Elevator == elevID {
 					toElevAlgo <- msg
 					sendMessage <- msg
 				} else {
@@ -58,7 +58,7 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 			fmt.Printf("Comm Recieved packet of type %s from broadcast\n", msg.PacketType)
 			switch msg.PacketType {
 			case "newOrder":
-				if msg.Elevator == id {
+				if msg.Elevator == elevID {
 					toElevAlgo <- msg
 				} else {
 					toOrders <- msg
@@ -66,7 +66,7 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 					toElevAlgo <- msg
 				}
 			case "orderList":
-				if msg.Elevator == id {
+				if msg.Elevator == elevID {
 					toOrders <- msg
 				}
 			case "getOrderList":

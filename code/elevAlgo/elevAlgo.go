@@ -28,8 +28,8 @@ func InitElev(elevPort string) {
 
 }
 
-func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo,
-	ElevAlgoToCom, OrdersToElevAlgo chan ChannelPacket, elevPort string) {
+func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo, ElevAlgoToCom,
+	OrdersToElevAlgo chan ChannelPacket, elevPort string, elevID int) {
 	InitElev(elevPort)
 	SetMotorDirection(MD_Up)
 	elevator := Elev{
