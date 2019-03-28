@@ -105,7 +105,7 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 					ordersRecieved = true
 				}
 			case "elevLost":
-				fmt.Printf("Recieved %s from comm. Redistributing orders", temp.PacketType)
+				fmt.Printf("Recieved %s from comm. Redistributing orders\n", temp.PacketType)
 				redistributeOrders()
 			}
 		case temp := <-ElevAlgoToOrders:
