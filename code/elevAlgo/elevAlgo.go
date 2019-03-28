@@ -93,6 +93,7 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo, ElevAlgoToCom,
 				if a.Floor == elevator.Floor {
 					go func() { drv_floors <- int(a.Floor) }()
 				} else {
+					SetButtonLamp(BT_Cab, int(a.Floor), true)
 					IdleCheck()
 				}
 			case "newOrder":
