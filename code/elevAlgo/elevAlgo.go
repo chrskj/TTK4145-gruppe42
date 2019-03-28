@@ -56,7 +56,7 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo, ElevAlgoToCom,
 	go PollButtons(drv_buttons)
 	go PollFloorSensor(drv_floors)
 	//elevFSM.FSMinit()
-	var ElevGoDirection = func(elevator Elev) string {
+	var ElevGoDirection = func(elevator *Elev) string {
 		if elevator.Dir == DirDown {
 			SetMotorDirection(MD_Down)
 			engineWatchDog.Reset()
@@ -68,6 +68,7 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo, ElevAlgoToCom,
 			elevator.State = Running
 			return "Doing next order in queue, going up"
 		} else if elevator.Dir == DirStop {
+			elevator.State = Idle
 			return "No orders in queue"
 		} else {
 			return "elevator.Dir out of bounds"
@@ -76,7 +77,7 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo, ElevAlgoToCom,
 	var IdleCheck = func() string {
 		if elevator.State == Idle {
 			elevator.Dir = QueueFuncChooseDirection(elevator)
-			return ElevGoDirection(elevator)
+			return ElevGoDirection(&elevator)
 		} else {
 			return "Elevator not idle, continuing on queue"
 		}
