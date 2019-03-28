@@ -86,6 +86,8 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders, OrdersToElevAlgo c
 			}
 		case temp := <-ElevAlgoToOrders:
 			switch temp.PacketType {
+			case "newOrder":
+				addOrder(temp)
 			case "buttonPress":
 				fmt.Println("Orders recieved " + temp.PacketType + " from elevAlgo")
 				newOrder := ChannelPacket{
@@ -258,12 +260,14 @@ func writeToFile() {
 }
 
 func addOrder(newOrder ChannelPacket) {
-	data = append(data, newOrder)
+	if newOrder.Elevator != 0 {
+		data = append(data, newOrder)
+	} else { //if newOrder.Elevator == 0
+		localOrders[1] = append(localOrders[1], newOrder)
+		writeToFile()
+	}
 	if newOrder.Elevator == thisElevator {
 		localOrders[0] = append(localOrders[0], newOrder)
-		writeToFile()
-	} else if newOrder.Elevator == 0 {
-		localOrders[1] = append(localOrders[1], newOrder)
 		writeToFile()
 	}
 }
