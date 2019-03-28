@@ -32,7 +32,7 @@ var data []ChannelPacket
 var localOrders [2][]ChannelPacket
 var comparing bool = false
 
-func InitOrders(OrdersToCom, ComToOrders, ElevAlgoToOrders, OrdersToElevAlgo chan ChannelPacket, elevID int) {
+func InitOrders(OrdersToCom, ComToOrders, ElevAlgoToOrders chan ChannelPacket, elevID int) {
 	thisElevator = elevID
 	readFile()
 	data = localOrders[0]
