@@ -75,6 +75,7 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 			case "orderComplete":
 				removeOrder(temp)
 			case "newOrder":
+				fmt.Println("New order from comm")
 				addOrder(temp)
 			case "getOrderList":
 				packet := ChannelPacket{
@@ -108,6 +109,7 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 		case temp := <-ElevAlgoToOrders:
 			switch temp.PacketType {
 			case "newOrder":
+				fmt.Println("New order from elevAlgo")
 				addOrder(temp)
 			case "buttonPress":
 				fmt.Println("Orders recieved " + temp.PacketType +
@@ -196,7 +198,6 @@ func costCompare(newOrder ChannelPacket, OrdersToCom,
 	}
 	fmt.Printf("-+-+-+-+--+-+-++-+-+--+-+-+-++--+-+-+-++--+-+-+-++\n")
 	if newOrder.Elevator != -1 {
-		addOrder(newOrder)
 		temp := newOrder
 		temp.PacketType = "newOrder"
 		OrdersToCom <- temp

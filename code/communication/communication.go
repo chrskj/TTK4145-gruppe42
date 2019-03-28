@@ -59,7 +59,6 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 			switch msg.PacketType {
 			case "newOrder":
 				if msg.Elevator == elevID {
-					toElevAlgo <- msg
 					toOrders <- msg
 				} else {
 					toOrders <- msg
