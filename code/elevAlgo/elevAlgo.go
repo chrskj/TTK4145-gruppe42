@@ -199,7 +199,6 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo, ElevAlgoToCom,
 			fmt.Printf("Entering doorTimer\n")
 			SetDoorOpenLamp(false)
 			elevator.Dir = QueueFuncChooseDirection(elevator)
-			fmt.Printf("We need to go %d\n", elevator.Dir)
 			if elevator.Dir == DirDown {
 				SetMotorDirection(MD_Down)
 				engineWatchDog.Reset()

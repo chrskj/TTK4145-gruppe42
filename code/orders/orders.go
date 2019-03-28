@@ -219,7 +219,7 @@ func readFile() {
 		defer file.Close()
 
 		reader := csv.NewReader(file)
-		fmt.Println("before read")
+		//fmt.Println("before read")
 		for {
 			input, error := reader.Read()
 			if error == io.EOF {
@@ -252,15 +252,15 @@ func readFile() {
 }
 
 func writeToFile() {
-	fmt.Println("before write")
+	//fmt.Println("before write")
 	if len(localOrders) > 0 {
 		file, err := os.Create(fmt.Sprintf("orders%d.csv", thisElevator))
 		checkError("Cannot create file", err)
 		defer file.Close()
 		writer := csv.NewWriter(file)
 		defer writer.Flush()
-		fmt.Printf("len0 = %d\n", len(localOrders[0]))
-		fmt.Printf("len1 = %d\n", len(localOrders[0]))
+		//fmt.Printf("len0 = %d\n", len(localOrders[0]))
+		//fmt.Printf("len1 = %d\n", len(localOrders[0]))
 		length := len(localOrders[0])
 		if len(localOrders[1]) > length {
 			length = len(localOrders[1])
@@ -270,14 +270,12 @@ func writeToFile() {
 			if j < len(localOrders[0]) {
 				valueStr = append(valueStr, []string{strconv.FormatInt(localOrders[0][j].Floor, 10), strconv.FormatBool(localOrders[0][j].Direction)}...)
 				valueStr = append(valueStr, strconv.FormatUint(localOrders[0][j].Timestamp, 10))
-				fmt.Println(valueStr[0])
 			} else {
 				valueStr = append(valueStr, []string{"-1", "", ""}...)
 			}
 			if j < len(localOrders[1]) {
 				valueStr = append(valueStr, []string{strconv.FormatInt(localOrders[1][j].Floor, 10), "0"}...)
 				valueStr = append(valueStr, strconv.FormatUint(localOrders[1][j].Timestamp, 10))
-				fmt.Println(valueStr[0])
 			}
 			err = writer.Write(valueStr)
 			checkError("Cannot write to file", err)
@@ -287,7 +285,6 @@ func writeToFile() {
 }
 
 func addOrder(newOrder ChannelPacket) {
-	fmt.Printf("Adding some orders to this party!\n")
 	if newOrder.Elevator != 0 {
 		data = append(data, newOrder)
 	}
@@ -325,7 +322,12 @@ func removeOrder(toRemove ChannelPacket) {
 		for index, value := range val {
 			if value.Floor == toRemove.Floor {
 				if index > 0 { //index-1 >= 0
-					localOrders[i] = append(localOrders[i][:index-1], localOrders[i][index+1:]...)
+					fmt.Println("before\n")
+					fmt.Println(localOrders[i])
+					localOrders[i] = append(localOrders[i][:index], localOrders[i][index+1:]...)
+					fmt.Println("after\n")
+					fmt.Println(localOrders[i])
+
 					writeToFile()
 				} else {
 					localOrders[i] = localOrders[i][index+1:]
