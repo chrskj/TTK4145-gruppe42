@@ -175,7 +175,6 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo,
 					Elevator:   id,
 					PacketType: "orderComplete",
 					Floor:      elevator.Floor,
-					Timestamp:  uint64(time.Now().UnixNano()),
 				}
 				ElevAlgoToCom <- packet //Notifying that order is complete
 				//OpenDoor(elevatorPtr, doorTimerPtr) Prosjekt for en annen gang
