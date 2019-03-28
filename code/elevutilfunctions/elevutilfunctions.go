@@ -3,6 +3,7 @@ package elevutilfunctions
 import (
 	"fmt"
 	"math"
+	"time"
 
 	. "../elevio"
 	. "../util"
@@ -68,7 +69,8 @@ func CreateCostPacket(order ChannelPacket, elevator *Elev,
 		Cost: CalculateCostFunction(*elevator, ChannelPacket{
 			Elevator:  order.Elevator,
 			Floor:     order.Floor,
-			Direction: order.Direction}, engineFlag),
+			Direction: order.Direction,
+			Timestamp: uint64(time.Now().UnixNano())}, engineFlag),
 	}
 	return packet
 }
