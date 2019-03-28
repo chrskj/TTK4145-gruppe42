@@ -29,7 +29,7 @@ func InitElev(elevPort string) {
 }
 
 func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo,
-	ElevAlgoToCom chan ChannelPacket, elevPort string) {
+	ElevAlgoToCom, OrdersToElevAlgo chan ChannelPacket, elevPort string) {
 	InitElev(elevPort)
 	SetMotorDirection(MD_Up)
 	elevator := Elev{
@@ -85,6 +85,25 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo,
 	for {
 		ElevatorPrinter(elevator)
 		select {
+		case a := <-OrdersToElevAlgo:
+			switch a.PacketType {
+			case "cabOrder":
+				fmt.Printf("Recieved %s from Orders\n", a.PacketType)
+				elevator.OrdersQueue[a.Floor][ButtonCab] = true
+				if a.Floor == elevator.Floor {
+					go func() { drv_floors <- int(a.Floor) }()
+				} else {
+					IdleCheck()
+				}
+			case "newOrder":
+				fmt.Printf("Got new order from Orders, printing packet\n")
+				fmt.Println(a)
+				if a.Floor == elevator.Floor {
+					go func() { drv_floors <- int(a.Floor) }()
+				}
+				SetOrder(a.Direction, int(a.Floor), elevatorPtr)
+				fmt.Printf("%s\n", IdleCheck())
+			}
 		case a := <-ComToElevAlgo:
 			fmt.Printf("Entering ComToElevAlgo\n")
 			switch a.PacketType {
