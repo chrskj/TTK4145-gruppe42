@@ -40,6 +40,8 @@ func InitOrders(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 	thisElevator = elevID
 	readFile()
 	data = localOrders[0]
+	go orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders, OrdersToElevAlgo)
+	time.Sleep(1 * time.Second)
 	for _, val := range localOrders[0] {
 		val.PacketType = "newOrder"
 		OrdersToElevAlgo <- val
@@ -52,8 +54,6 @@ func InitOrders(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 		PacketType: "getOrderList",
 		Elevator:   thisElevator,
 	}
-
-	go orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders, OrdersToElevAlgo)
 }
 
 func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders,
@@ -318,7 +318,7 @@ func removeOrder(toRemove ChannelPacket) {
 				}
 			}
 		}
-	} else if toRemove.Elevator == thisElevator { //checks cab orders for this elevator
+	} else if toRemove.Elevator == 0 { //checks cab orders for this elevator
 		for index, value := range data {
 			if value.Timestamp == toRemove.Timestamp &&
 				value.Elevator == toRemove.Elevator {
