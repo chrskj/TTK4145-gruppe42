@@ -334,7 +334,7 @@ func removeOrder(toRemove ChannelPacket) {
 			if value.Floor == toRemove.Floor {
 				if len(data) == 1 {
 					data = []ChannelPacket{}
-				} else if index > 0 { //index-1 >= 0
+				} else if index > 0 && index < len(data)-1 { //index-1 >= 0
 					data = append(data[:index], data[index+1:]...)
 				} else {
 					data = data[index+1:]
