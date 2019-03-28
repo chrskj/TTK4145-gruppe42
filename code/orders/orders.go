@@ -55,6 +55,7 @@ func InitOrders(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 	OrdersToCom <- ChannelPacket{
 		PacketType: "getOrderList",
 		Elevator:   thisElevator,
+		Timestamp:  uint64(time.Now().UnixNano()),
 	}
 }
 
@@ -95,6 +96,7 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 				packet := ChannelPacket{
 					PacketType: "orderList",
 					OrderList:  data,
+					Timestamp:  uint64(time.Now().UnixNano()),
 				}
 				OrdersToCom <- packet
 			case "orderList":
@@ -157,6 +159,7 @@ func costCompare(newOrder ChannelPacket, OrdersToCom, OrdersToElevAlgo, costChan
 		PacketType: "requestCostFunc",
 		Elevator:   thisElevator,
 		Floor:      newOrder.Floor,
+		Timestamp:  uint64(time.Now().UnixNano()),
 	}
 	//costTicker := time.NewTicker(10 * time.Millisecond)
 	tttimer := time.NewTimer(5 * time.Second)
