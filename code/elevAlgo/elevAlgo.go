@@ -127,9 +127,10 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo, ElevAlgoToCom,
 			NewOrder := ChannelPacket{
 				PacketType: "buttonPress",
 				Floor:      int64(a.Floor),
+				Timestamp:  uint64(time.Now().UnixNano()),
 			}
 			if a.Floor == int(elevator.Floor) {
-				if elevator.State == Idle || elevator.State == DoorOpen{
+				if elevator.State == Idle || elevator.State == DoorOpen {
 					go func() { drv_floors <- a.Floor }()
 				} else {
 					if a.Button == BT_Cab {
@@ -139,6 +140,7 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo, ElevAlgoToCom,
 							PacketType: "newOrder",
 							Floor:      int64(a.Floor),
 							Elevator:   0,
+							Timestamp:  uint64(time.Now().UnixNano()),
 						}
 						fmt.Println(IdleCheck())
 					} else {
@@ -156,6 +158,7 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo, ElevAlgoToCom,
 						PacketType: "newOrder",
 						Floor:      int64(a.Floor),
 						Elevator:   0,
+						Timestamp:  uint64(time.Now().UnixNano()),
 					}
 					fmt.Println(IdleCheck())
 				} else {
@@ -180,6 +183,7 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo, ElevAlgoToCom,
 					Elevator:   elevID,
 					PacketType: "orderComplete",
 					Floor:      elevator.Floor,
+					Timestamp:  uint64(time.Now().UnixNano()),
 				}
 				ElevAlgoToCom <- packet //Notifying that order is complete
 				//OpenDoor(elevatorPtr, doorTimerPtr) Prosjekt for en annen gang
