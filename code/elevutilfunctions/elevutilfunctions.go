@@ -1,14 +1,18 @@
 package elevutilfunctions
 
 import (
+	"fmt"
 	"math"
 
 	. "../elevio"
 	. "../util"
 )
 
-func CalculateCostFunction(elevator Elev, order ChannelPacket) float64 {
-	var cost float64
+func CalculateCostFunction(elevator Elev, order ChannelPacket, engineFlag bool) float64 {
+	if engineFlag {
+		return 9999.0
+	}
+
 	switch elevator.State {
 	case Idle:
 		return math.Abs(float64(order.Floor - elevator.Floor))
@@ -33,7 +37,7 @@ func CalculateCostFunction(elevator Elev, order ChannelPacket) float64 {
 				float64(QueueFuncCountOrders(elevator))
 		}
 	}
-	return float64(QueueFuncCountOrders(elevator)) + cost
+	return float64(QueueFuncCountOrders(elevator))
 }
 
 func SetOrder(direction bool, floor int, elevator *Elev) {
@@ -55,13 +59,13 @@ func ClearOrders(floor int, elevator *Elev) {
 	SetButtonLamp(BT_Cab, floor, false)
 }
 
-func CreateCostPacket(order ChannelPacket, elevator *Elev) ChannelPacket {
+func CreateCostPacket(order ChannelPacket, elevator *Elev, engineFlag bool) ChannelPacket {
 	packet := ChannelPacket{
 		PacketType: "cost",
 		Cost: CalculateCostFunction(*elevator, ChannelPacket{
 			Elevator:  order.Elevator,
 			Floor:     order.Floor,
-			Direction: order.Direction}),
+			Direction: order.Direction}, engineFlag),
 	}
 	return packet
 }
@@ -143,6 +147,59 @@ func QueueFuncShouldStop(elevator Elev) bool {
 			!QueueFuncOrdersAboveInQueue(elevator))
 	default:
 		return true
+	}
+}
+
+func ElevatorPrinter(elev Elev) {
+	fmt.Printf("State: ")
+	switch elev.State {
+	case 0:
+		fmt.Printf("Initialize\t")
+	case 1:
+		fmt.Printf("Idle\t")
+	case 2:
+		fmt.Printf("Running\t")
+	case 3:
+		fmt.Printf("DoorOpen\t")
+	case 4:
+		fmt.Printf("EmergencyStop\t")
+	}
+	fmt.Printf("| Current Direction: ")
+	switch elev.Dir {
+	case -1:
+		fmt.Printf("Going down...\t")
+	case 0:
+		fmt.Printf("Standing still...\t")
+	case 1:
+		fmt.Printf("Going up...\t")
+	}
+	fmt.Printf("| Floor: %d\n", elev.Floor)
+	//fmt.Printf("%t\n", elev.OrdersQueue)
+	for i := 0; i < len(elev.OrdersQueue); i++ {
+		for j := 0; j < len(elev.OrdersQueue[0]); j++ {
+			fmt.Printf("%t\t", elev.OrdersQueue[i][j])
+		}
+		fmt.Printf("\n")
+	}
+	fmt.Printf("==========================================================\n")
+}
+
+func DirBoolToInt(direction bool) ElevDir {
+	if direction {
+		return DirUp
+	} else {
+		return DirDown
+	}
+}
+
+func DirIntToBool(direction ElevDir) bool {
+	if direction == DirDown {
+		return false
+	} else if direction == DirUp {
+		return true
+	} else {
+		fmt.Printf("Error: DirStop cannot be converted to bool\n")
+		return false
 	}
 }
 

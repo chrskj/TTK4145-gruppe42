@@ -42,6 +42,8 @@ func main() {
 		elevID = int(temp)
 	}()
 
+	go orders.InitOrders(OrdersToCom, ComToOrders, ElevAlgoToOrders, elevID)
+
 	go elevAlgo.ElevStateMachine(ElevAlgoToOrders,
 		ComToElevAlgo, ElevAlgoToCom, elevPort)
 

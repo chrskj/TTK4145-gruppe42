@@ -32,9 +32,14 @@ var data []ChannelPacket
 var localOrders [2][]ChannelPacket
 var comparing bool = false
 
+<<<<<<< HEAD
 func InitOrders(OrdersToCom, ComToOrders, ElevAlgoToOrders chan ChannelPacket,
 	id int) {
 	thisElevator = id
+=======
+func InitOrders(OrdersToCom, ComToOrders, ElevAlgoToOrders chan ChannelPacket, elevID int) {
+	thisElevator = elevID
+>>>>>>> 1b8aba10472c5dd7d694649d4c013f124e9e621c
 	readFile()
 	OrdersToCom <- ChannelPacket{
 		PacketType: "getOrderList",
@@ -97,12 +102,23 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders chan ChannelPacket)
 				if newOrder.Timestamp > 0 {
 					go costCompare(newOrder, OrdersToCom, costChan)
 				}
+			case "engineTimeOut":
+				fmt.Println("Motor has stopped. Redistributing orders")
+				var failedOrders []ChannelPacket
+				for len(localOrders[0]) > 0 {
+					if costCompare(newOrder, OrdersToCom, costChan) { //order was assigned successfully
+						fmt.Printf("Order was assigned to elevator %d\n")
+						removeOrder(newOrder)
+					} else { //order assignment unsuccessful
+						failedOrders = append(failedOrders, newOrder)
+					}
+				}
 			}
 		}
 	}
 }
 
-func costCompare(newOrder ChannelPacket, OrdersToCom, costChan chan ChannelPacket) {
+func costCompare(newOrder ChannelPacket, OrdersToCom, costChan chan ChannelPacket) (returnVar bool) {
 	comparing = true
 	OrdersToCom <- ChannelPacket{
 		PacketType: "requestCostFunc",
@@ -157,43 +173,52 @@ func costCompare(newOrder ChannelPacket, OrdersToCom, costChan chan ChannelPacke
 		temp := newOrder
 		temp.PacketType = "newOrder"
 		OrdersToCom <- temp
+		returnVar = true
 	} else {
-		//error, no costs received
+		returnVar = false
 	}
 	comparing = false
+	return
 }
 
 func readFile() {
 	file, err := os.Open(fmt.Sprintf("orders%d.csv", thisElevator))
-	checkError("Cannot create file", err)
-	defer file.Close()
+	if err != nil {
+		file, err := os.Create(fmt.Sprintf("orders%d.csv", thisElevator))
+		checkError("Cannot create file", err)
+		writer := csv.NewWriter(file)
+		writer.Flush()
+		file.Close()
+	} else {
+		defer file.Close()
 
-	reader := csv.NewReader(file)
-	fmt.Println("before read")
-	for {
-		input, error := reader.Read()
-		if error == io.EOF {
-			break
-		}
-		FloorTemp, _ := strconv.ParseInt(input[0], 10, 64)
-		DirectionTemp, _ := strconv.ParseBool(input[1])
-		TimestampTemp, _ := strconv.ParseUint(input[2], 10, 64)
-		localOrders[0] = append(localOrders[0], ChannelPacket{
-			Elevator:  thisElevator,
-			Floor:     FloorTemp,
-			Direction: DirectionTemp,
-			Timestamp: TimestampTemp,
-		})
-		if len(input) > 3 {
-			FloorTemp, _ := strconv.ParseInt(input[3], 10, 64)
-			DirectionTemp, _ := strconv.ParseBool(input[4])
-			TimestampTemp, _ := strconv.ParseUint(input[5], 10, 64)
-			localOrders[1] = append(localOrders[1], ChannelPacket{
-				Elevator:  0,
+		reader := csv.NewReader(file)
+		fmt.Println("before read")
+		for {
+			input, error := reader.Read()
+			if error == io.EOF {
+				break
+			}
+			FloorTemp, _ := strconv.ParseInt(input[0], 10, 64)
+			DirectionTemp, _ := strconv.ParseBool(input[1])
+			TimestampTemp, _ := strconv.ParseUint(input[2], 10, 64)
+			localOrders[0] = append(localOrders[0], ChannelPacket{
+				Elevator:  thisElevator,
 				Floor:     FloorTemp,
 				Direction: DirectionTemp,
 				Timestamp: TimestampTemp,
 			})
+			if len(input) > 3 {
+				FloorTemp, _ := strconv.ParseInt(input[3], 10, 64)
+				DirectionTemp, _ := strconv.ParseBool(input[4])
+				TimestampTemp, _ := strconv.ParseUint(input[5], 10, 64)
+				localOrders[1] = append(localOrders[1], ChannelPacket{
+					Elevator:  0,
+					Floor:     FloorTemp,
+					Direction: DirectionTemp,
+					Timestamp: TimestampTemp,
+				})
+			}
 		}
 	}
 }
@@ -204,7 +229,7 @@ func writeToFile() {
 
 		file, err := os.Create(fmt.Sprintf("orders%d.csv", thisElevator))
 		checkError("Cannot create file", err)
-		defer file.Close()
+		file.Close()
 		writer := csv.NewWriter(file)
 		defer writer.Flush()
 		length := len(localOrders[0])
@@ -240,10 +265,25 @@ func addOrder(newOrder ChannelPacket) {
 	}
 }
 
-func removeOrder(toRemove ChannelPacket) []ChannelPacket {
+func removeOrder(toRemove ChannelPacket) {
 	for index, value := range data {
-		if value.Timestamp == toRemove.Timestamp {
-			data = append(data[:index-1], data[index+1:]...)
+		if value.Timestamp == toRemove.Timestamp && value.Elevator == toRemove.Elevator {
+			if index-1 >= 0 {
+				data = append(data[:index-1], data[index+1:]...)
+			} else {
+				data = data[index+1:]
+			}
+		}
+	}
+	if toRemove.Elevator == thisElevator {
+		for index, value := range data {
+			if value.Timestamp == toRemove.Timestamp && value.Elevator == toRemove.Elevator {
+				if index > 0 { //index-1 >= 0
+					localOrders[0] = append(localOrders[0][:index-1], localOrders[0][index+1:]...)
+				} else {
+					localOrders[0] = localOrders[0][index+1:]
+				}
+			}
 		}
 	}
 	if toRemove.Elevator == thisElevator || toRemove.Elevator == 0 {
