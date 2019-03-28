@@ -32,6 +32,7 @@ var costChan chan ChannelPacket
 var data []ChannelPacket
 var localOrders [2][]ChannelPacket
 var comparing bool = false
+var ordersRecieved = false
 
 func InitOrders(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 	OrdersToElevAlgo chan ChannelPacket, elevID int) {
@@ -80,16 +81,32 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 				}
 				OrdersToCom <- packet
 			case "orderList":
-				data = temp.OrderList
-				var locOrdersTemp []ChannelPacket
-				for _, val := range data {
-					if val.Elevator == thisElevator {
-						locOrdersTemp = append(locOrdersTemp, val)
+				if !ordersRecieved {
+					data = temp.OrderList
+					var locOrdersTemp []ChannelPacket
+					for _, val := range data {
+						if val.Elevator == thisElevator {
+							locOrdersTemp = append(locOrdersTemp, val)
+						}
+					}
+					localOrders[0] = locOrdersTemp
+					ordersRecieved = true
+				}
+			case "elevLost":
+				fmt.Printf("Recieved %s from comm. Redistributing orders", temp.PacketType)
+				for len(localOrders[1]) > 0 {
+					localOrders[1][0].Elevator = -1
+					if costCompare(localOrders[1][0], OrdersToCom, costChan) { //order was assigned successfully
+						fmt.Printf("Order was assigned to elevator %d\n")
+						removeOrder(localOrders[1][0])
 					}
 				}
+<<<<<<< HEAD
 				localOrders[0] = locOrdersTemp
 			case "elevLost":
 				// Do samthang
+=======
+>>>>>>> 83118032d91aed0e1e3764576b4abb6de26a5223
 			}
 		case temp := <-ElevAlgoToOrders:
 			switch temp.PacketType {
@@ -118,14 +135,11 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 				}
 			case "engineTimeOut":
 				fmt.Println("Motor has stopped. Redistributing orders")
-				var failedOrders []ChannelPacket
 				for len(localOrders[1]) > 0 {
 					if costCompare(localOrders[1][0], OrdersToCom, costChan) {
 						//order was assigned successfully
 						fmt.Printf("Order was assigned to elevator %d\n")
 						removeOrder(localOrders[1][0])
-					} else { //order assignment unsuccessful
-						failedOrders = append(failedOrders, localOrders[1][0])
 					}
 				}
 			}
@@ -242,37 +256,35 @@ func readFile() {
 func writeToFile() {
 	fmt.Println("before write")
 	if len(localOrders) > 0 {
-
 		file, err := os.Create(fmt.Sprintf("orders%d.csv", thisElevator))
 		checkError("Cannot create file", err)
-		file.Close()
+		defer file.Close()
 		writer := csv.NewWriter(file)
 		defer writer.Flush()
+		fmt.Printf("len0 = %d\n", len(localOrders[0]))
+		fmt.Printf("len1 = %d\n", len(localOrders[0]))
 		length := len(localOrders[0])
 		if len(localOrders[1]) > length {
 			length = len(localOrders[1])
 		}
-		var valueStr []string
 		for j := 0; j < length; j++ {
+			var valueStr = []string{}
 			if j < len(localOrders[0]) {
-				valueStr = append(valueStr,
-					strconv.FormatInt(localOrders[0][j].Floor, 10)+","+
-						strconv.FormatBool(localOrders[0][j].Direction)+",")
-				valueStr[j] = valueStr[j] +
-					strconv.FormatUint(localOrders[0][j].Timestamp, 10)
+				valueStr = append(valueStr, []string{strconv.FormatInt(localOrders[0][j].Floor, 10), strconv.FormatBool(localOrders[0][j].Direction)}...)
+				valueStr = append(valueStr, strconv.FormatUint(localOrders[0][j].Timestamp, 10))
+				fmt.Println(valueStr[0])
 			} else {
-				valueStr = append(valueStr, "0,false,0")
+				valueStr = append(valueStr, []string{"", "", ""}...)
 			}
 			if j < len(localOrders[1]) {
-				valueStr[j] = valueStr[j] + "," +
-					strconv.FormatInt(localOrders[1][j].Floor, 10) + "," +
-					strconv.FormatBool(localOrders[1][j].Direction) + ","
-				valueStr[j] = valueStr[j] +
-					strconv.FormatUint(localOrders[1][j].Timestamp, 10)
+				valueStr = append(valueStr, []string{strconv.FormatInt(localOrders[1][j].Floor, 10), "0"}...)
+				valueStr = append(valueStr, strconv.FormatUint(localOrders[1][j].Timestamp, 10))
+				fmt.Println(valueStr[0])
 			}
+			err = writer.Write(valueStr)
+			checkError("Cannot write to file", err)
 		}
-		err = writer.Write(valueStr)
-		checkError("Cannot write to file", err)
+
 	}
 }
 
