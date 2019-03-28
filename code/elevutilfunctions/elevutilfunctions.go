@@ -8,7 +8,9 @@ import (
 	. "../util"
 )
 
-func CalculateCostFunction(elevator Elev, order ChannelPacket, engineFlag bool) float64 {
+func CalculateCostFunction(elevator Elev, order ChannelPacket,
+	engineFlag bool) float64 {
+
 	if engineFlag {
 		return 9999.0
 	}
@@ -59,7 +61,8 @@ func ClearOrders(floor int, elevator *Elev) {
 	SetButtonLamp(BT_Cab, floor, false)
 }
 
-func CreateCostPacket(order ChannelPacket, elevator *Elev, engineFlag bool) ChannelPacket {
+func CreateCostPacket(order ChannelPacket, elevator *Elev,
+	engineFlag bool) ChannelPacket {
 	packet := ChannelPacket{
 		PacketType: "cost",
 		Cost: CalculateCostFunction(*elevator, ChannelPacket{
