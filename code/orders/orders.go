@@ -97,16 +97,10 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 				for len(localOrders[1]) > 0 {
 					localOrders[1][0].Elevator = -1
 					if costCompare(localOrders[1][0], OrdersToCom, costChan) { //order was assigned successfully
-						fmt.Printf("Order was assigned to elevator %d\n")
+						fmt.Printf("Order was assigned to elevator x\n")
 						removeOrder(localOrders[1][0])
 					}
 				}
-<<<<<<< HEAD
-				localOrders[0] = locOrdersTemp
-			case "elevLost":
-				// Do samthang
-=======
->>>>>>> 83118032d91aed0e1e3764576b4abb6de26a5223
 			}
 		case temp := <-ElevAlgoToOrders:
 			switch temp.PacketType {
