@@ -63,12 +63,7 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 	costChan := make(chan ChannelPacket)
 	var redistributeOrders = func() bool {
 		for len(localOrders[0]) > 0 {
-			if costCompare(localOrders[0][0], OrdersToCom, OrdersToElevAlgo, costChan) {
-				//order was assigned successfully
-				fmt.Printf("Order was assigned to elevator %d\n", data[len(data)-1])
-				removeOrder(localOrders[0][0])
-			}
-		}
+			go costCompare(localOrders[0][0], OrdersToCom, OrdersToElevAlgo, costChan) 
 		return true
 	}
 
@@ -146,8 +141,7 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 	}
 }
 
-func costCompare(newOrder ChannelPacket, OrdersToCom, OrdersToElevAlgo,
-	costChan chan ChannelPacket) (returnVar bool) {
+func costCompare(newOrder ChannelPacket, OrdersToCom, OrdersToElevAlgo,	costChan chan ChannelPacket){
 	comparing = true
 	OrdersToCom <- ChannelPacket{
 		PacketType: "requestCostFunc",
@@ -200,16 +194,13 @@ func costCompare(newOrder ChannelPacket, OrdersToCom, OrdersToElevAlgo,
 	if newOrder.Elevator != -1 {
 		temp := newOrder
 		temp.PacketType = "newOrder"
+		addOrder(newOrder)
 		OrdersToCom <- temp
 		if newOrder.Elevator == thisElevator {
 			OrdersToElevAlgo <- temp
 		}
-		returnVar = true
-	} else {
-		returnVar = false
 	}
 	comparing = false
-	return
 }
 
 func readFile() {
