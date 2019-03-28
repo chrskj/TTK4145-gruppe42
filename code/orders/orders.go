@@ -96,6 +96,7 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 				}
 			case "elevLost":
 				fmt.Printf("Recieved %s from comm. Redistributing orders", temp.PacketType)
+				fmt.Println(localOrders)
 				for len(localOrders[1]) > 0 {
 					localOrders[1][0].Elevator = -1
 					if costCompare(localOrders[1][0], OrdersToCom, costChan) { //order was assigned successfully
@@ -285,10 +286,12 @@ func writeToFile() {
 }
 
 func addOrder(newOrder ChannelPacket) {
+	fmt.Println("Lets add an order!", newOrder)
 	if newOrder.Elevator != 0 {
 		data = append(data, newOrder)
 	}
 	if newOrder.Elevator == thisElevator {
+		fmt.Println("Adding some 0s")
 		localOrders[0] = append(localOrders[0], newOrder)
 		writeToFile()
 	}
