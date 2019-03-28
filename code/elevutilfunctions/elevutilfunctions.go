@@ -143,11 +143,11 @@ func QueueFuncShouldStop(elevator Elev) bool {
 	case DirDown:
 		return (elevator.OrdersQueue[elevator.Floor][ButtonCab] ||
 			elevator.OrdersQueue[elevator.Floor][ButtonDown] ||
-			!QueueFuncOrdersBelowInQueue(elevator))
+			!QueueFuncOrdersBelowInQueue(elevator) || (elevator.Floor == 0))
 	case DirUp:
 		return (elevator.OrdersQueue[elevator.Floor][ButtonCab] ||
 			elevator.OrdersQueue[elevator.Floor][ButtonUp] ||
-			!QueueFuncOrdersAboveInQueue(elevator))
+			!QueueFuncOrdersAboveInQueue(elevator) || (elevator.Floor == 3))
 	default:
 		return true
 	}
