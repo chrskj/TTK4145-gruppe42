@@ -175,7 +175,6 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo,
 					Elevator:   id,
 					PacketType: "orderComplete",
 					Floor:      elevator.Floor,
-					Direction:  DirIntToBool(elevator.Dir),
 					Timestamp:  uint64(time.Now().UnixNano()),
 				}
 				ElevAlgoToCom <- packet //Notifying that order is complete
