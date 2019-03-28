@@ -22,7 +22,7 @@ func main() {
 	ComToOrders := make(chan ChannelPacket)
 
 	//Kanal orders -> heisalgo (ønsket floor, direction)
-	//OrdersToElevAlgo := make(chan ChannelPacket)
+	OrdersToElevAlgo := make(chan ChannelPacket)
 	//Kanal heisalgo -> orders (current floor)
 	ElevAlgoToOrders := make(chan ChannelPacket)
 
@@ -42,10 +42,10 @@ func main() {
 		elevID = int(temp)
 	}()
 
-	go orders.InitOrders(OrdersToCom, ComToOrders, ElevAlgoToOrders, elevID)
+	go orders.InitOrders(OrdersToCom, ComToOrders, ElevAlgoToOrders, OrdersToElevAlgo, elevID)
 
 	go elevAlgo.ElevStateMachine(ElevAlgoToOrders,
-		ComToElevAlgo, ElevAlgoToCom, elevPort)
+		ComToElevAlgo, ElevAlgoToCom, OrdersToElevAlgo, elevPort)
 
 	go communication.InitCom(ComToElevAlgo, ComToOrders, ElevAlgoToCom,
 		OrdersToCom, elevID)

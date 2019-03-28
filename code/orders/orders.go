@@ -32,18 +32,27 @@ var data []ChannelPacket
 var localOrders [2][]ChannelPacket
 var comparing bool = false
 
-func InitOrders(OrdersToCom, ComToOrders, ElevAlgoToOrders chan ChannelPacket, elevID int) {
+func InitOrders(OrdersToCom, ComToOrders, ElevAlgoToOrders, OrdersToElevAlgo chan ChannelPacket, elevID int) {
 	thisElevator = elevID
 	readFile()
+	data = localOrders[0]
+	for _, val := range localOrders[0] {
+		val.PacketType = "newOrder"
+		OrdersToElevAlgo <- val
+	}
+	for _, val := range localOrders[1] {
+		val.PacketType = "cabOrder"
+		OrdersToElevAlgo <- val
+	}
 	OrdersToCom <- ChannelPacket{
 		PacketType: "getOrderList",
 		Elevator:   thisElevator,
 	}
 
-	go orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders)
+	go orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders, OrdersToElevAlgo)
 }
 
-func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders chan ChannelPacket) {
+func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders, OrdersToElevAlgo chan ChannelPacket) {
 	costChan := make(chan ChannelPacket)
 	for {
 		select {
@@ -99,12 +108,12 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders chan ChannelPacket)
 			case "engineTimeOut":
 				fmt.Println("Motor has stopped. Redistributing orders")
 				var failedOrders []ChannelPacket
-				for len(localOrders[0]) > 0 {
-					if costCompare(newOrder, OrdersToCom, costChan) { //order was assigned successfully
+				for len(localOrders[1]) > 0 {
+					if costCompare(localOrders[1][0], OrdersToCom, costChan) { //order was assigned successfully
 						fmt.Printf("Order was assigned to elevator %d\n")
-						removeOrder(newOrder)
+						removeOrder(localOrders[1][0])
 					} else { //order assignment unsuccessful
-						failedOrders = append(failedOrders, newOrder)
+						failedOrders = append(failedOrders, localOrders[1][0])
 					}
 				}
 			}
@@ -260,7 +269,7 @@ func addOrder(newOrder ChannelPacket) {
 }
 
 func removeOrder(toRemove ChannelPacket) {
-	for index, value := range data {
+	for index, value := range data { //checks all normal orders
 		if value.Timestamp == toRemove.Timestamp && value.Elevator == toRemove.Elevator {
 			if index-1 >= 0 {
 				data = append(data[:index-1], data[index+1:]...)
@@ -269,7 +278,7 @@ func removeOrder(toRemove ChannelPacket) {
 			}
 		}
 	}
-	if toRemove.Elevator == thisElevator {
+	if toRemove.Elevator == thisElevator { //checks hall orders for this elevator
 		for index, value := range data {
 			if value.Timestamp == toRemove.Timestamp && value.Elevator == toRemove.Elevator {
 				if index > 0 { //index-1 >= 0
@@ -279,15 +288,17 @@ func removeOrder(toRemove ChannelPacket) {
 				}
 			}
 		}
-	}
-	if toRemove.Elevator == thisElevator || toRemove.Elevator == 0 {
+	} else if toRemove.Elevator == thisElevator { //checks cab orders for this elevator
 		for index, value := range data {
-			if value.Timestamp == toRemove.Timestamp {
-				data = append(data[:index-1], data[index+1:]...)
+			if value.Timestamp == toRemove.Timestamp && value.Elevator == toRemove.Elevator {
+				if index > 0 { //index-1 >= 0
+					localOrders[1] = append(localOrders[1][:index-1], localOrders[1][index+1:]...)
+				} else {
+					localOrders[1] = localOrders[1][index+1:]
+				}
 			}
 		}
 	}
-	return data
 }
 
 func checkError(message string, err error) {
