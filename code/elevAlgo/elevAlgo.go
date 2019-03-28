@@ -96,7 +96,7 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo, ElevAlgoToCom,
 					SetButtonLamp(BT_Cab, int(a.Floor), true)
 					IdleCheck()
 				}
-			case "newOrder":
+			case "newOrder": //if newOrder is from orders, do the order
 				fmt.Printf("Got new order from Orders, printing packet\n")
 				fmt.Println(a)
 				if a.Floor == elevator.Floor {
@@ -108,20 +108,12 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo, ElevAlgoToCom,
 		case a := <-ComToElevAlgo:
 			fmt.Printf("Entering ComToElevAlgo\n")
 			switch a.PacketType {
-			case "newOrder":
-				fmt.Printf("Got new order from comm, printing packet\n")
-				fmt.Println(a)
-				if a.Floor == elevator.Floor {
-					go func() { drv_floors <- int(a.Floor) }()
-				}
-				SetOrder(a.Direction, int(a.Floor), elevatorPtr)
-				fmt.Printf("%s\n", IdleCheck())
 			case "requestCostFunc":
 				fmt.Printf("Entering ComToElevAlgo\n Responding cost function \n")
 				go func(ElevAlgoToCom chan ChannelPacket) {
 					ElevAlgoToCom <- CreateCostPacket(a, elevatorPtr, engineFlag)
 				}(ElevAlgoToCom) //ble tidligere stuck her, bør kanskje endre
-			case "otherOrder":
+			case "newOrder": //if newOrder is from comm, only switch on the light
 				SetButtonLamp(DirBoolToButtonType(a.Direction), int(a.Floor), true)
 			case "orderComplete":
 				SetButtonLamp(BT_HallDown, int(a.Floor), false)
