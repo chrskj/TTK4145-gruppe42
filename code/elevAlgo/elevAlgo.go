@@ -42,6 +42,7 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo,
 	engineWatchDog := w.New(3 * time.Second)
 	engineWatchDog.Reset()
 	engineWatchDog.Stop()
+	var engineFlag bool = false
 	//Start timers
 	doorTimer := time.NewTimer(3 * time.Second)
 	doorTimer.Stop()
@@ -98,7 +99,7 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo,
 			case "requestCostFunc":
 				fmt.Printf("Entering ComToElevAlgo\n Responding cost function \n")
 				go func(ElevAlgoToCom chan ChannelPacket) {
-					ElevAlgoToCom <- CreateCostPacket(a, elevatorPtr)
+					ElevAlgoToCom <- CreateCostPacket(a, elevatorPtr, engineFlag)
 				}(ElevAlgoToCom) //ble tidligere stuck her, bør kanskje endre
 			case "otherOrder":
 				SetButtonLamp(DirBoolToButtonType(a.Direction), int(a.Floor), true)
@@ -135,12 +136,13 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo,
 					fmt.Println(IdleCheck())
 				} else {
 					SetOrder(DirButtonTypeToBool(a.Button), a.Floor, &elevator)
-                    NewOrder.Direction = DirButtonTypeToBool(a.Button)
-                    ElevAlgoToOrders<-NewOrder
+					NewOrder.Direction = DirButtonTypeToBool(a.Button)
+					ElevAlgoToOrders <- NewOrder
 				}
 			}
 		case a := <-drv_floors:
 			fmt.Printf("Entering drv_floors\n")
+			engineFlag = false
 			engineWatchDog.Reset()
 			SetFloorIndicator(a)
 			fmt.Printf("We are on floor nr. %+v\n", a)
@@ -166,7 +168,15 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo,
 		//If someone is trying to get into the elevator when doors are closing,
 		case <-engineWatchDog.TimeOverChannel():
 			fmt.Printf("Engine has timed out. Entering emergency stop mode .\n")
-			//drv_stop <- true
+			engineFlag = true
+			//SI IFRa om at motoren har stanset
+			packet := ChannelPacket{
+				PacketType: "engineTimeOut",
+				Floor:      elevator.Floor,
+				Direction:  DirIntToBool(elevator.Dir),
+				Timestamp:  uint64(time.Now().UnixNano()),
+			}
+			ElevAlgoToOrders <- packet
 		case <-doorTimer.C:
 			fmt.Printf("Entering doorTimer\n")
 			SetDoorOpenLamp(false)

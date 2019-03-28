@@ -7,8 +7,11 @@ import (
 	. "../util"
 )
 
-func CalculateCostFunction(elevator Elev, order ChannelPacket) float64 {
-	var cost float64
+func CalculateCostFunction(elevator Elev, order ChannelPacket, engineFlag bool) float64 {
+	if engineFlag {
+		return 9999.0
+	}
+
 	switch elevator.State {
 	case Idle:
 		return math.Abs(float64(order.Floor - elevator.Floor))
@@ -33,7 +36,7 @@ func CalculateCostFunction(elevator Elev, order ChannelPacket) float64 {
 				float64(QueueFuncCountOrders(elevator))
 		}
 	}
-	return float64(QueueFuncCountOrders(elevator)) + cost
+	return float64(QueueFuncCountOrders(elevator))
 }
 
 func SetOrder(direction bool, floor int, elevator *Elev) {
@@ -55,13 +58,13 @@ func ClearOrders(floor int, elevator *Elev) {
 	SetButtonLamp(BT_Cab, floor, false)
 }
 
-func CreateCostPacket(order ChannelPacket, elevator *Elev) ChannelPacket {
+func CreateCostPacket(order ChannelPacket, elevator *Elev, engineFlag bool) ChannelPacket {
 	packet := ChannelPacket{
 		PacketType: "cost",
 		Cost: CalculateCostFunction(*elevator, ChannelPacket{
 			Elevator:  order.Elevator,
 			Floor:     order.Floor,
-			Direction: order.Direction}),
+			Direction: order.Direction}, engineFlag),
 	}
 	return packet
 }
