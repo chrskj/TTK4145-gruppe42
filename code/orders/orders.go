@@ -65,6 +65,7 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 	var redistributeOrders = func(LostElevator int) bool {
 		for _, val := range data {
 			if val.Elevator == LostElevator {
+				val.Timestamp = uint64(time.Now().UnixNano())
 				go costCompare(val, OrdersToCom, OrdersToElevAlgo, costChan)
 				time.Sleep(3 * time.Second)
 			}
@@ -142,6 +143,7 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 				fmt.Println("Motor has stopped. Redistributing orders")
 				//for len(localOrders) > 0 {
 				for _, val := range localOrders[0] {
+					val.Timestamp = uint64(time.Now().UnixNano())
 					go costCompare(val, OrdersToCom, OrdersToElevAlgo, costChan)
 					time.Sleep(3 * time.Second)
 				}
@@ -191,7 +193,7 @@ func costCompare(newOrder ChannelPacket, OrdersToCom, OrdersToElevAlgo, costChan
 	if !timein {
 		fmt.Println("timed out on cost compare")
 	}
-	max := 9999.0
+	max := 9998.0
 	fmt.Printf("-+-+-+-+--+-+-++-+-+--+-+-+-++--+-+-+-++--+-+-+-++\n")
 	for _, val := range costs {
 		fmt.Printf("The cost function of elevator %d is %f\n",
