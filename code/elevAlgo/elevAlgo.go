@@ -162,7 +162,6 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo, ElevAlgoToCom,
 					}
 					fmt.Println(IdleCheck())
 				} else {
-					SetOrder(DirButtonTypeToBool(a.Button), a.Floor, &elevator)
 					NewOrder.Direction = DirButtonTypeToBool(a.Button)
 					ElevAlgoToOrders <- NewOrder
 				}
