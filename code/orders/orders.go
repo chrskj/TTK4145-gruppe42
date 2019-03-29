@@ -351,7 +351,7 @@ func removeOrder(toRemove ChannelPacket) {
 		for i, val := range localOrders {
 			for index, value := range val {
 				if value.Floor == toRemove.Floor {
-					if index > 0 && index < len(data)-1 { //index-1 >= 0
+					if index > 0 && index < len(localOrders[i])-1 { //index-1 >= 0
 						localOrders[i] = append(localOrders[i][:index], localOrders[i][index+1:]...)
 						writeToFile()
 					} else if index == 0 {
