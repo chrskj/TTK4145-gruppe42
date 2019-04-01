@@ -1,5 +1,6 @@
 ##Elevator state machine
 In our state machine we have the following states:
+-Initialize
 -Idle
 -Running
 -DoorOpen

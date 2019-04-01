@@ -10,6 +10,7 @@ import (
 	wdog "../watchdog"
 )
 
+//InitElev commences communication and turns of lights
 func InitElev(elevPort string) {
 	ipString := "localhost:" + elevPort
 	elevio.Init(ipString, util.NumFloors)
@@ -24,29 +25,32 @@ func InitElev(elevPort string) {
 func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo, ElevAlgoToCom,
 	OrdersToElevAlgo chan util.ChannelPacket, elevPort string, elevID int) {
 	InitElev(elevPort)
+
+	//Sends elevator upwards until it hits floor.
 	elevio.SetMotorDirection(elevio.MD_Up)
 	elevator := util.Elev{
 		State:       util.Idle,
 		Dir:         util.DirUp,
 		OrdersQueue: [util.NumFloors][util.NumOrderTypes]bool{},
 	}
-	var elevatorPtr *util.Elev = &elevator
+
 	//Start watchdogs
 	engineWatchDog := wdog.New(3 * time.Second)
 	engineWatchDog.Reset()
 	engineWatchDog.Stop()
-	var engineFlag bool = false
+	var engineFlag bool //In case of engine failure
+
 	//Start timers
 	doorTimer := time.NewTimer(3 * time.Second)
 	doorTimer.Stop()
 
 	//Initialize channels
-	drv_buttons := make(chan elevio.ButtonEvent)
-	drv_floors := make(chan int)
+	drvButtons := make(chan elevio.ButtonEvent)
+	drvFloors := make(chan int)
 
 	//Start polling
-	go elevio.PollButtons(drv_buttons)
-	go elevio.PollFloorSensor(drv_floors)
+	go elevio.PollButtons(drvButtons)
+	go elevio.PollFloorSensor(drvFloors)
 
 	var ElevGoDirection = func(elevator *util.Elev) string {
 		if elevator.Dir == util.DirDown {
@@ -84,7 +88,7 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo, ElevAlgoToCom,
 				fmt.Printf("Recieved %s from Orders\n", a.PacketType)
 				elevator.OrdersQueue[a.Floor][util.ButtonCab] = true
 				if a.Floor == elevator.Floor {
-					go func() { drv_floors <- int(a.Floor) }()
+					go func() { drvFloors <- int(a.Floor) }()
 				} else {
 					elevio.SetButtonLamp(elevio.BT_Cab, int(a.Floor), true)
 					IdleCheck()
@@ -93,9 +97,9 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo, ElevAlgoToCom,
 				fmt.Printf("Got new order from Orders, printing packet\n")
 				fmt.Println(a)
 				if a.Floor == elevator.Floor {
-					go func() { drv_floors <- int(a.Floor) }()
+					go func() { drvFloors <- int(a.Floor) }()
 				}
-				utilfunc.SetOrder(a.Direction, int(a.Floor), elevatorPtr)
+				utilfunc.SetOrder(a.Direction, int(a.Floor), &elevator)
 				fmt.Printf("%s\n", IdleCheck())
 			}
 		case a := <-ComToElevAlgo:
@@ -104,7 +108,7 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo, ElevAlgoToCom,
 			case "requestCostFunc":
 				fmt.Printf("Entering ComToElevAlgo\n Responding cost function \n")
 				go func(ElevAlgoToCom chan util.ChannelPacket) {
-					ElevAlgoToCom <- utilfunc.CreateCostPacket(a, elevatorPtr, engineFlag)
+					ElevAlgoToCom <- utilfunc.CreateCostPacket(a, &elevator, engineFlag)
 				}(ElevAlgoToCom)
 			case "newOrder": //if newOrder is from comm, only switch on the light
 				elevio.SetButtonLamp(utilfunc.DirBoolToButtonType(a.Direction), int(a.Floor), true)
@@ -113,8 +117,8 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo, ElevAlgoToCom,
 				elevio.SetButtonLamp(elevio.BT_HallUp, int(a.Floor), false)
 			}
 
-		case a := <-drv_buttons:
-			fmt.Printf("Entering drv_buttons\n")
+		case a := <-drvButtons:
+			fmt.Printf("Entering drvButtons\n")
 			//This order will go straight to orders, unless its a cab call!
 			NewOrder := util.ChannelPacket{
 				PacketType: "buttonPress",
@@ -123,7 +127,7 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo, ElevAlgoToCom,
 			}
 			if a.Floor == int(elevator.Floor) {
 				if elevator.State == util.Idle || elevator.State == util.DoorOpen {
-					go func() { drv_floors <- a.Floor }()
+					go func() { drvFloors <- a.Floor }()
 				} else {
 					if a.Button == elevio.BT_Cab {
 						elevator.OrdersQueue[a.Floor][util.ButtonCab] = true
@@ -158,8 +162,8 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo, ElevAlgoToCom,
 					ElevAlgoToOrders <- NewOrder
 				}
 			}
-		case a := <-drv_floors:
-			fmt.Printf("Entering drv_floors\n")
+		case a := <-drvFloors:
+			fmt.Printf("Entering drvFloors\n")
 			engineFlag = false
 			engineWatchDog.Reset()
 			elevio.SetFloorIndicator(a)

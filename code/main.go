@@ -5,22 +5,22 @@ import (
 	"fmt"
 
 	"./communication"
-	"./elevAlgo"
+	"./elevalgo"
 	"./orders"
-	. "./util"
+	"./util"
 )
 
 func main() {
 	fmt.Println("Started")
 
-	OrdersToCom := make(chan ChannelPacket)
-	ComToOrders := make(chan ChannelPacket)
+	OrdersToCom := make(chan util.ChannelPacket)
+	ComToOrders := make(chan util.ChannelPacket)
 
-	OrdersToElevAlgo := make(chan ChannelPacket)
-	ElevAlgoToOrders := make(chan ChannelPacket)
+	OrdersToElevAlgo := make(chan util.ChannelPacket)
+	ElevAlgoToOrders := make(chan util.ChannelPacket)
 
-	ComToElevAlgo := make(chan ChannelPacket)
-	ElevAlgoToCom := make(chan ChannelPacket)
+	ComToElevAlgo := make(chan util.ChannelPacket)
+	ElevAlgoToCom := make(chan util.ChannelPacket)
 
 	var elevPort string
 	flag.StringVar(&elevPort, "port", "15657", "Port of elevator to connect to")
@@ -31,7 +31,7 @@ func main() {
 	go communication.InitCom(ComToElevAlgo, ComToOrders, ElevAlgoToCom,
 		OrdersToCom, elevID)
 
-	go elevAlgo.ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo, ElevAlgoToCom,
+	go elevalgo.ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo, ElevAlgoToCom,
 		OrdersToElevAlgo, elevPort, elevID)
 
 	go orders.InitOrders(OrdersToCom, ComToOrders, ElevAlgoToOrders,
