@@ -7,10 +7,10 @@ import (
 
 	"../network/bcast"
 	"../network/peers"
-	. "../util"
+	"../util"
 )
 
-func RedundantBcast(msg ChannelPacket, sendMessage chan ChannelPacket) {
+func RedundantBcast(msg util.ChannelPacket, sendMessage chan util.ChannelPacket) {
 	for tries := 0; tries < 5; tries++ {
 		sendMessage <- msg
 		time.Sleep(100 * time.Millisecond)
@@ -18,12 +18,12 @@ func RedundantBcast(msg ChannelPacket, sendMessage chan ChannelPacket) {
 }
 
 func InitCom(ComToElevAlgo, ComToOrders, ElevAlgoToCom,
-	OrdersToCom chan ChannelPacket, elevID int) {
+	OrdersToCom chan util.ChannelPacket, elevID int) {
 
-	sendMessage := make(chan ChannelPacket)
+	sendMessage := make(chan util.ChannelPacket)
 	go bcast.Transmitter(16570, sendMessage)
 
-	receiveMessage := make(chan ChannelPacket)
+	receiveMessage := make(chan util.ChannelPacket)
 	go bcast.Receiver(16570, receiveMessage)
 
 	peerTxEnable := make(chan bool)
@@ -89,7 +89,7 @@ func InitCom(ComToElevAlgo, ComToOrders, ElevAlgoToCom,
 			fmt.Printf("  Lost:     %q\n", msg.Lost)
 			if len(msg.Lost) > 0 {
 				idLost, _ := strconv.Atoi(msg.Lost[0])
-				ComToOrders <- ChannelPacket{
+				ComToOrders <- util.ChannelPacket{
 					PacketType: "elevLost",
 					Elevator:   idLost,
 				}

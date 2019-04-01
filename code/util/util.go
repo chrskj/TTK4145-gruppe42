@@ -6,10 +6,7 @@ const (
 	NumOrderTypes = 3
 )
 
-type currentFloor int //stor bokstav
-type FSM_state int
-
-const ( //stor bokstav
+const (
 	Initialize = iota
 	Idle
 	Running
@@ -17,13 +14,15 @@ const ( //stor bokstav
 	EmergencyStop
 )
 
-type ElevDir int //for elevator IO use, not orders
+type ElevDir int
 
 const (
 	DirDown ElevDir = iota
 	DirStop
 	DirUp
 )
+
+type FSM_state int
 
 type Elev struct {
 	State       FSM_state
@@ -44,7 +43,7 @@ type ChannelPacket struct {
 
 type Button int
 
-const ( //stor bokstav
+const (
 	ButtonDown Button = iota
 	ButtonCab
 	ButtonUp
