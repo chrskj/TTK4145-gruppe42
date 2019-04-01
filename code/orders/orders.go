@@ -192,8 +192,6 @@ func costCompare(newOrder ChannelPacket, OrdersToCom, OrdersToElevAlgo, costChan
 	if newOrder.Elevator != -1 {
 		temp := newOrder
 		temp.PacketType = "newOrder"
-		//fmt.Println("Adding order from costCompare")
-		//addOrder(newOrder)
 		OrdersToCom <- temp
 		if newOrder.Elevator == thisElevator {
 			OrdersToElevAlgo <- temp
@@ -214,7 +212,6 @@ func readFile() {
 		defer file.Close()
 
 		reader := csv.NewReader(file)
-		//fmt.Println("before read")
 		for {
 			input, error := reader.Read()
 			if error == io.EOF {
@@ -247,15 +244,12 @@ func readFile() {
 }
 
 func writeToFile() {
-	//fmt.Println("before write")
 	if len(localOrders) > 0 {
 		file, err := os.Create(fmt.Sprintf("orders%d.csv", thisElevator))
 		checkError("Cannot create file", err)
 		defer file.Close()
 		writer := csv.NewWriter(file)
 		defer writer.Flush()
-		//fmt.Printf("len0 = %d\n", len(localOrders[0]))
-		//fmt.Printf("len1 = %d\n", len(localOrders[0]))
 		length := len(localOrders[0])
 		if len(localOrders[1]) > length {
 			length = len(localOrders[1])

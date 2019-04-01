@@ -43,8 +43,6 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 		}
 	}()
 
-	//handShakeChan := make(chan ChannelPacket)
-
 	lastRecieved := []uint64{0, 0, 0, 0, 0, 0}
 
 	for {
@@ -56,63 +54,46 @@ func InitCom(toElevAlgo, toOrders, fromElevAlgo, fromOrders chan ChannelPacket,
 			fmt.Println("From orders!")
 			go SendImportantMsg(msg, sendMessage)
 		case msg := <-receiveMessage:
-			//fmt.Printf("Comm Recieved packet of type %s from broadcast\n", msg.PacketType)
 			switch msg.PacketType {
 			case "newOrder":
 				if lastRecieved[0] != msg.Timestamp {
 					lastRecieved[0] = msg.Timestamp
-					//start
 					toOrders <- msg
 					if msg.Elevator != elevID {
 						toElevAlgo <- msg
 					}
-					//end
 				}
-				//msg.PacketType = "handShake"
-				//msg.Elevator = elevID
-				//sendMessage <- msg
 			case "orderList":
 				if lastRecieved[1] != msg.Timestamp {
 					lastRecieved[1] = msg.Timestamp
-					//start
 					if msg.Elevator == elevID {
 						toOrders <- msg
 					}
-					//end
 				}
 			case "getOrderList":
 				if lastRecieved[2] != msg.Timestamp {
 					lastRecieved[2] = msg.Timestamp
-					//start
 					toOrders <- msg
-					//end
+
 				}
 			case "cost":
 				if lastRecieved[3] != msg.Timestamp {
 					lastRecieved[3] = msg.Timestamp
-					//start
 					toOrders <- msg
-					//end
 				}
 
 			case "orderComplete":
 				if lastRecieved[4] != msg.Timestamp {
 					lastRecieved[4] = msg.Timestamp
-					//start
 					toOrders <- msg
 					toElevAlgo <- msg
-					//end
 				}
 
 			case "requestCostFunc":
 				if lastRecieved[5] != msg.Timestamp {
 					lastRecieved[5] = msg.Timestamp
-					//start
 					toElevAlgo <- msg
-					//end
 				}
-				//case "handShake":
-				//	handShakeChan <- msg
 			}
 
 		default:
@@ -126,34 +107,3 @@ func SendImportantMsg(msg ChannelPacket, sendMessage chan ChannelPacket) {
 		time.Sleep(100 * time.Millisecond)
 	}
 }
-
-/*
-func SendImportantMsg(msg ChannelPacket, sendMessage, handShakeChan chan ChannelPacket){
-	recievedHandShakes := []int{}
-	sendMessage <- msg
-	for tries := 0; tries < 10 && len(recievedHandShakes) < NumElevators; {
-		select {
-		case temp := <-handShakeChan:
-			if temp.Timestamp == msg.Timestamp {
-				unique := true
-				for _, val := range recievedHandShakes {
-					if temp.Elevator == val {
-						unique = false
-					}
-				}
-				if unique {
-					recievedHandShakes = append(recievedHandShakes, temp.Elevator)
-				}
-			} else {
-				handShakeChan <- temp
-				tries++
-				time.Sleep(300 * time.Millisecond)
-			}
-		default:
-			sendMessage <- msg
-			tries++
-			time.Sleep(300 * time.Millisecond)
-		}
-	}
-}
-*/

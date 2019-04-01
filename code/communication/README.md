@@ -1,4 +1,4 @@
-#Communication module
+##Communication module
 This module handles all communication with the other independent elevators of the system.
 
 ## Notes

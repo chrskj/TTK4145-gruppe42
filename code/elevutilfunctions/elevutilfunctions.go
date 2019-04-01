@@ -12,7 +12,7 @@ import (
 func CalculateCostFunction(elevator Elev, order ChannelPacket,
 	engineFlag bool) float64 {
 
-	//If enginefailure, high cost on malfunctioning elevator
+	//If engine failure, high cost on malfunctioning elevator
 	if engineFlag {
 		return 9999.0
 	}
