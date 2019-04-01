@@ -1,11 +1,5 @@
 package communication
 
-//sende heartbeats
-//phoenix backup
-// Hele tiden oppdatere de andre heisene på sine egne orders
-// - hele tiden sende ned til orders en komplett ordreliste
-// - ta imot orders sin ordrelsite og sende ut
-
 import (
 	"fmt"
 	"strconv"

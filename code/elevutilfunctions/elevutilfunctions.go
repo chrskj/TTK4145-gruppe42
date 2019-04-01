@@ -12,10 +12,12 @@ import (
 func CalculateCostFunction(elevator Elev, order ChannelPacket,
 	engineFlag bool) float64 {
 
+	//If enginefailure, high cost on malfunctioning elevator
 	if engineFlag {
 		return 9999.0
 	}
 
+	//High cost if elevator is heading in the wrong direction, or already has many orders
 	switch elevator.State {
 	case Idle:
 		return math.Abs(float64(order.Floor - elevator.Floor))
@@ -81,7 +83,6 @@ func QueueFuncCountOrders(elevator Elev) int {
 			if elevator.OrdersQueue[i][j] {
 				sum = sum + 1
 			}
-
 		}
 	}
 	return sum
