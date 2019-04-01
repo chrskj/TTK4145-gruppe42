@@ -1,6 +1,6 @@
-# communication
-Modul for kommunikasjon
+#Communication module
+This module handles all communication with the other independent elevators of the system.
 
-## Notater
-Heartbeat opererer på port 16569
-Kommunikasjon opererer på port 16570
+## Notes
+The heartbeat broadcast operates on port 16569
+The communication broadcast operates on port 16570

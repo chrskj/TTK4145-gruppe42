@@ -1,0 +1,2 @@
+##Module for handling of orders
+This module takes care of handling all incoming and outgoing orders. It distributes orders based on recieved cost functions from the other elevators. It also saves orders to file to ensure correct behaviour of the elevator after a power outage. 
