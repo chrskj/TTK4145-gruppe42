@@ -9,18 +9,18 @@ import (
 	"strconv"
 	"time"
 
-	. "../util"
+	"../util"
 )
 
 var thisElevator int
-var costChan chan ChannelPacket
-var data []ChannelPacket
-var localOrders [2][]ChannelPacket
+var costChan chan util.ChannelPacket
+var data []util.ChannelPacket
+var localOrders [2][]util.ChannelPacket
 var comparing bool = false
 var ordersRecieved = false
 
 func InitOrders(OrdersToCom, ComToOrders, ElevAlgoToOrders,
-	OrdersToElevAlgo chan ChannelPacket, elevID int) {
+	OrdersToElevAlgo chan util.ChannelPacket, elevID int) {
 
 	thisElevator = elevID
 	readFile()
@@ -37,7 +37,7 @@ func InitOrders(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 		val.PacketType = "cabOrder"
 		OrdersToElevAlgo <- val
 	}
-	OrdersToCom <- ChannelPacket{
+	OrdersToCom <- util.ChannelPacket{
 		PacketType: "getOrderList",
 		Elevator:   thisElevator,
 		Timestamp:  uint64(time.Now().UnixNano()),
@@ -45,8 +45,8 @@ func InitOrders(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 }
 
 func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders,
-	OrdersToElevAlgo chan ChannelPacket) {
-	costChan := make(chan ChannelPacket)
+	OrdersToElevAlgo chan util.ChannelPacket) {
+	costChan := make(chan util.ChannelPacket)
 	var redistributeOrders = func(LostElevator int) bool {
 		for _, val := range data {
 			if val.Elevator == LostElevator {
@@ -77,7 +77,7 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 					addOrder(temp)
 				}
 			case "getOrderList":
-				packet := ChannelPacket{
+				packet := util.ChannelPacket{
 					PacketType: "orderList",
 					OrderList:  data,
 					Timestamp:  uint64(time.Now().UnixNano()),
@@ -86,7 +86,7 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 			case "orderList":
 				if !ordersRecieved {
 					data = temp.OrderList
-					var locOrdersTemp []ChannelPacket
+					var locOrdersTemp []util.ChannelPacket
 					for _, val := range data {
 						if val.Elevator == thisElevator {
 							locOrdersTemp = append(locOrdersTemp, val)
@@ -106,9 +106,9 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 				addOrder(temp)
 			case "buttonPress":
 				fmt.Println("Orders recieved " + temp.PacketType + " from elevAlgo")
-				newOrder := ChannelPacket{
-					Elevator:  -1, //Skal det ikke være heisens ID her?
-					Floor:     temp.Floor,
+				newOrder := util.ChannelPacket{
+					Elevator:  -1,         //Gets set to the order with the best cost, if it's still -1 at the end,
+					Floor:     temp.Floor, //					  that means that there are no available elevators
 					Direction: temp.Direction,
 					Timestamp: uint64(time.Now().UnixNano()),
 				}
@@ -126,36 +126,32 @@ func orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 				}
 			case "engineTimeOut":
 				fmt.Println("Motor has stopped. Redistributing orders")
-				//for len(localOrders) > 0 {
 				for _, val := range localOrders[0] {
 					val.Timestamp = uint64(time.Now().UnixNano())
 					go costCompare(val, OrdersToCom, OrdersToElevAlgo, costChan)
 					time.Sleep(3 * time.Second)
 				}
-				//}
 			}
 		}
 	}
 }
 
-func costCompare(newOrder ChannelPacket, OrdersToCom, OrdersToElevAlgo, costChan chan ChannelPacket) {
+func costCompare(newOrder util.ChannelPacket, OrdersToCom, OrdersToElevAlgo, costChan chan util.ChannelPacket) {
 	comparing = true
-	OrdersToCom <- ChannelPacket{
+	OrdersToCom <- util.ChannelPacket{
 		PacketType: "requestCostFunc",
 		Elevator:   thisElevator,
 		Floor:      newOrder.Floor,
 		Timestamp:  uint64(time.Now().UnixNano()),
 	}
-	//costTicker := time.NewTicker(10 * time.Millisecond)
 	tttimer := time.NewTimer(5 * time.Second)
 	timein := true
 	go func() {
 		<-tttimer.C
 		timein = false
 	}()
-	//var ticks uint
-	var costs []ChannelPacket
-	for recievedOrders := 0; recievedOrders < NumElevators && timein; {
+	var costs []util.ChannelPacket
+	for recievedOrders := 0; recievedOrders < util.NumElevators && timein; {
 		select {
 		case temp := <-costChan:
 			fmt.Println("Orders recieved cost")
@@ -221,7 +217,7 @@ func readFile() {
 			DirectionTemp, _ := strconv.ParseBool(input[1])
 			TimestampTemp, _ := strconv.ParseUint(input[2], 10, 64)
 			if FloorTemp != -1 {
-				localOrders[0] = append(localOrders[0], ChannelPacket{
+				localOrders[0] = append(localOrders[0], util.ChannelPacket{
 					Elevator:  thisElevator,
 					Floor:     FloorTemp,
 					Direction: DirectionTemp,
@@ -232,7 +228,7 @@ func readFile() {
 				FloorTemp, _ := strconv.ParseInt(input[3], 10, 64)
 				DirectionTemp, _ := strconv.ParseBool(input[4])
 				TimestampTemp, _ := strconv.ParseUint(input[5], 10, 64)
-				localOrders[1] = append(localOrders[1], ChannelPacket{
+				localOrders[1] = append(localOrders[1], util.ChannelPacket{
 					Elevator:  0,
 					Floor:     FloorTemp,
 					Direction: DirectionTemp,
@@ -273,7 +269,7 @@ func writeToFile() {
 	}
 }
 
-func addOrder(newOrder ChannelPacket) {
+func addOrder(newOrder util.ChannelPacket) {
 	fmt.Println("Lets add an order!", newOrder)
 	if len(data) > 0 {
 		if data[len(data)-1].Timestamp != newOrder.Timestamp ||
@@ -310,12 +306,12 @@ func addOrder(newOrder ChannelPacket) {
 
 }
 
-func removeOrder(toRemove ChannelPacket) {
+func removeOrder(toRemove util.ChannelPacket) {
 	if len(data) > 0 {
 		for index, value := range data { //checks all normal orders
 			if value.Floor == toRemove.Floor {
-				if len(data) == 1 {	//compares the length of data to the index and executes the correct removal 
-					data = []ChannelPacket{}
+				if len(data) == 1 { //compares the length of data to the index and executes the correct removal
+					data = []util.ChannelPacket{}
 				} else if index > 0 && index < len(data)-1 {
 					data = append(data[:index], data[index+1:]...)
 				} else if index == 0 {
@@ -330,7 +326,7 @@ func removeOrder(toRemove ChannelPacket) {
 		for i, val := range localOrders {
 			for index, value := range val {
 				if value.Floor == toRemove.Floor {
-					if index > 0 && index < len(localOrders[i])-1 { //compares the length of localOrders to the index and executes the correct removal 
+					if index > 0 && index < len(localOrders[i])-1 { //compares the length of localOrders to the index and executes the correct removal
 						localOrders[i] = append(localOrders[i][:index], localOrders[i][index+1:]...)
 						writeToFile()
 					} else if index == 0 {
