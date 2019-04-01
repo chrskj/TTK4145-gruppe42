@@ -6,14 +6,15 @@ import (
 
 	elevio "../elevio"
 	utilFuncs "../elevutilfunctions"
-	util "../util"
+	"../util"
 	wDog "../watchdog"
 )
 
+//InitElev commences communication and turns of lights
 func InitElev(elevPort string) {
 	ipString := "localhost:" + elevPort
 	elevio.Init(ipString, util.NumFloors)
-	for i := 0; i < util.NumFloors; i++ { //Turn of all the lights in case they are still on
+	for i := 0; i < util.NumFloors; i++ {
 		elevio.SetButtonLamp(elevio.BT_Cab, i, false)
 		elevio.SetButtonLamp(elevio.BT_HallDown, i, false)
 		elevio.SetButtonLamp(elevio.BT_HallUp, i, false)
@@ -24,29 +25,32 @@ func InitElev(elevPort string) {
 func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo, ElevAlgoToCom,
 	OrdersToElevAlgo chan util.ChannelPacket, elevPort string, elevID int) {
 	InitElev(elevPort)
+
+	//Sends elevator upwards until it hits floor.
 	elevio.SetMotorDirection(elevio.MD_Up)
 	elevator := util.Elev{
-		State:       util.Idle,
+		State:       util.Initialize,
 		Dir:         util.DirUp,
 		OrdersQueue: [util.NumFloors][util.NumOrderTypes]bool{},
 	}
-	var elevatorPtr *util.Elev = &elevator
+
 	//Start watchdogs
 	engineWatchDog := wDog.New(3 * time.Second)
 	engineWatchDog.Reset()
 	engineWatchDog.Stop()
-	var engineFlag bool = false
+	var engineFlag bool //In case of engine failure
+
 	//Start timers
 	doorTimer := time.NewTimer(3 * time.Second)
 	doorTimer.Stop()
 
 	//Initialize channels
-	drv_buttons := make(chan elevio.ButtonEvent)
-	drv_floors := make(chan int)
+	drvButtons := make(chan elevio.ButtonEvent)
+	drvFloors := make(chan int)
 
 	//Start polling
-	go elevio.PollButtons(drv_buttons)
-	go elevio.PollFloorSensor(drv_floors)
+	go elevio.PollButtons(drvButtons)
+	go elevio.PollFloorSensor(drvFloors)
 
 	var ElevGoDirection = func(elevator *util.Elev) string {
 		if elevator.Dir == util.DirDown {
@@ -78,24 +82,24 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo, ElevAlgoToCom,
 	for {
 		utilFuncs.ElevatorPrinter(elevator)
 		select {
-		case a := <-OrdersToElevAlgo:
+		case a := <-OrdersToElevAlgo: //hall orders or lost cab orders
 			switch a.PacketType {
 			case "cabOrder":
 				fmt.Printf("Recieved %s from Orders\n", a.PacketType)
 				elevator.OrdersQueue[a.Floor][util.ButtonCab] = true
 				if a.Floor == elevator.Floor {
-					go func() { drv_floors <- int(a.Floor) }()
+					go func() { drvFloors <- int(a.Floor) }()
 				} else {
 					elevio.SetButtonLamp(elevio.BT_Cab, int(a.Floor), true)
 					IdleCheck()
 				}
-			case "newOrder": //if newOrder is from orders, do the order
+			case "newOrder":
 				fmt.Printf("Got new order from Orders, printing packet\n")
 				fmt.Println(a)
 				if a.Floor == elevator.Floor {
-					go func() { drv_floors <- int(a.Floor) }()
+					go func() { drvFloors <- int(a.Floor) }()
 				}
-				utilFuncs.SetOrder(a.Direction, int(a.Floor), elevatorPtr)
+				utilFuncs.SetOrder(a.Direction, int(a.Floor), &elevator)
 				fmt.Printf("%s\n", IdleCheck())
 			}
 		case a := <-ComToElevAlgo:
@@ -104,7 +108,7 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo, ElevAlgoToCom,
 			case "requestCostFunc":
 				fmt.Printf("Entering ComToElevAlgo\n Responding cost function \n")
 				go func(ElevAlgoToCom chan util.ChannelPacket) {
-					ElevAlgoToCom <- utilFuncs.CreateCostPacket(a, elevatorPtr, engineFlag)
+					ElevAlgoToCom <- utilFuncs.CreateCostPacket(a, &elevator, engineFlag)
 				}(ElevAlgoToCom)
 			case "newOrder": //if newOrder is from comm, only switch on the light
 				elevio.SetButtonLamp(utilFuncs.DirBoolToButtonType(a.Direction), int(a.Floor), true)
@@ -113,7 +117,7 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo, ElevAlgoToCom,
 				elevio.SetButtonLamp(elevio.BT_HallUp, int(a.Floor), false)
 			}
 
-		case a := <-drv_buttons:
+		case a := <-drvButtons: //Buttonpress event
 			fmt.Printf("Entering drv_buttons\n")
 			//This order will go straight to orders, unless its a cab call!
 			NewOrder := util.ChannelPacket{
@@ -123,7 +127,7 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo, ElevAlgoToCom,
 			}
 			if a.Floor == int(elevator.Floor) {
 				if elevator.State == util.Idle || elevator.State == util.DoorOpen {
-					go func() { drv_floors <- a.Floor }()
+					go func() { drvFloors <- a.Floor }() //if order is at same floor as elevator is currently at, and it is idle, it activates the reached-floor event.
 				} else {
 					if a.Button == elevio.BT_Cab {
 						elevator.OrdersQueue[a.Floor][util.ButtonCab] = true
@@ -158,7 +162,7 @@ func ElevStateMachine(ElevAlgoToOrders, ComToElevAlgo, ElevAlgoToCom,
 					ElevAlgoToOrders <- NewOrder
 				}
 			}
-		case a := <-drv_floors:
+		case a := <-drvFloors: //Reached floor event
 			fmt.Printf("Entering drv_floors\n")
 			engineFlag = false
 			engineWatchDog.Reset()
