@@ -28,7 +28,7 @@ func InitOrders(OrdersToCom, ComToOrders, ElevAlgoToOrders,
 	go orderRoutine(OrdersToCom, ComToOrders, ElevAlgoToOrders, OrdersToElevAlgo)
 	time.Sleep(1 * time.Second)
 	for _, val := range localOrders[0] {
-		if val.Elevator != -1 {
+		if val.Elevator == 1 {
 			val.PacketType = "newOrder"
 			OrdersToElevAlgo <- val
 		}
@@ -314,9 +314,9 @@ func removeOrder(toRemove ChannelPacket) {
 	if len(data) > 0 {
 		for index, value := range data { //checks all normal orders
 			if value.Floor == toRemove.Floor {
-				if len(data) == 1 {
+				if len(data) == 1 {	//compares the length of data to the index and executes the correct removal 
 					data = []ChannelPacket{}
-				} else if index > 0 && index < len(data)-1 { //index-1 >= 0
+				} else if index > 0 && index < len(data)-1 {
 					data = append(data[:index], data[index+1:]...)
 				} else if index == 0 {
 					data = data[index+1:]
@@ -330,7 +330,7 @@ func removeOrder(toRemove ChannelPacket) {
 		for i, val := range localOrders {
 			for index, value := range val {
 				if value.Floor == toRemove.Floor {
-					if index > 0 && index < len(localOrders[i])-1 { //index-1 >= 0
+					if index > 0 && index < len(localOrders[i])-1 { //compares the length of localOrders to the index and executes the correct removal 
 						localOrders[i] = append(localOrders[i][:index], localOrders[i][index+1:]...)
 						writeToFile()
 					} else if index == 0 {
